@@ -139,6 +139,48 @@ Imported files are merged into a single configuration array before routes and gr
 conflicts arise, the latter import will overwrite the former and the importing file will take precedence over any 
 imported routes.
 
+## Providers
+
+### CORS Provider
+
+The CORS provider can be used to give your API the ability to accept cross domain requests. It is enabled by default and 
+can be configured by adding the following parameters to your app's syringe config:
+
+#### Allowed Headers
+
+```yaml
+parameters:
+    cors.request.defaultHeaders:
+# optional, automatically set to:
+#     ["Content-Type", "Authorization"]
+    cors.request.headers:
+      - "X-CUSTOM-REQUEST_HEADER"
+    cors.response.headers:
+      - "X-CUSTOM-RESPONSE-HEADER"
+```
+
+These parameters allow for additional headers to be sent and received by the client. `cors.request.defaultHeaders` 
+contains the headers commonly required by Lazy-Boy apps, but can be overwritten if these headers need to be removed. The 
+headers and defaultHeaders are merged together, so you only need to set these configuration options if you need to use
+additional headers or to restrict headers.
+
+#### Allowed Methods
+
+```yaml
+parameters:
+    cors.defaultAllowedMethods:
+# optional, automatically set to:
+#     ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    cors.allowedMethods:
+      - "CONNECT"
+      - "CUSTOM"
+```
+
+The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to enable custom 
+methods or to set a more restricted set. The `OPTIONS` method is required for CORS to work, so it should always be an
+set in these lists. As with the request headers, the list of methods and default methods are merged together, so you 
+only need to set them if you need to make changes.
+
 ## Contributing
 
 If you have improvements you would like to see, open an issue in this github project or better yet, fork the project,
