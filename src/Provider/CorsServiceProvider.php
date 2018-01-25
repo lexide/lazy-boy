@@ -37,7 +37,7 @@ class CorsServiceProvider implements ServiceProviderInterface, BootableProviderI
     public function boot(Application $app) {
         $allowedResponseHeaders = $app["cors.response.headers"];
         $allowedRequestHeaders = array_merge($app["cors.request.defaultHeaders"], $app["cors.request.headers"]);
-        $allowedMethods = array_merge($app["cors.response.defaultAllowedMethods"], $app["cors.response.allowedMethods"]);
+        $allowedMethods = array_merge($app["cors.defaultAllowedMethods"], $app["cors.allowedMethods"]);
 
         //handling CORS preflight request
         $app->before(function (Request $request) use ($allowedRequestHeaders, $allowedMethods) {
