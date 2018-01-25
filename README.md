@@ -177,7 +177,7 @@ parameters:
 ```
 
 The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to enable custom 
-methods or to set a more restricted set. The `OPTIONS` method is required for CORS to work, so it should always be an
+methods or to use a more restricted list. The `OPTIONS` method is required for CORS to work, so it should always be an
 set in these lists. As with the request headers, the list of methods and default methods are merged together, so you 
 only need to set them if you need to make changes.
 
