@@ -23,14 +23,16 @@ class CorsServiceProvider implements ServiceProviderInterface, BootableProviderI
         $pimple["cors.request.headers"] = [];
         $pimple["cors.response.headers"] = [];
 
-        // default the cors allowed methods to what is set for the router plus the OPTIONS method
-        $pimple["cors.allowedMethods"] = array_merge($pimple["router.allowedMethods"], ["options"]);
+        // default the cors allowed methods to what is set for the router
+        $pimple["cors.allowedMethods"] = $pimple["router.allowedMethods"];
     }
 
     public function boot(Application $app) {
         $allowedResponseHeaders = $app["cors.response.headers"];
         $allowedRequestHeaders = array_merge($app["cors.request.defaultHeaders"], $app["cors.request.headers"]);
         $allowedMethods = $app["cors.allowedMethods"];
+        // The OPTIONS method is required for CORS, so add that regardless
+        $allowedMethods[] = "options";
 
         //handling CORS preflight request
         $app->before(function (Request $request) use ($allowedRequestHeaders, $allowedMethods) {
