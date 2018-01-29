@@ -23,28 +23,21 @@ class CorsServiceProvider implements ServiceProviderInterface, BootableProviderI
         $pimple["cors.request.headers"] = [];
         $pimple["cors.response.headers"] = [];
 
-        $pimple["cors.defaultAllowedMethods"] = [
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "PATCH",
-            "OPTIONS"
-        ];
-        $pimple["cors.allowedMethods"] = [];
+        // default the cors allowed methods to what is set for the router plus the OPTIONS method
+        $pimple["cors.allowedMethods"] = array_merge($pimple["router.allowedMethods"], ["options"]);
     }
 
     public function boot(Application $app) {
         $allowedResponseHeaders = $app["cors.response.headers"];
         $allowedRequestHeaders = array_merge($app["cors.request.defaultHeaders"], $app["cors.request.headers"]);
-        $allowedMethods = array_merge($app["cors.defaultAllowedMethods"], $app["cors.allowedMethods"]);
+        $allowedMethods = $app["cors.allowedMethods"];
 
         //handling CORS preflight request
         $app->before(function (Request $request) use ($allowedRequestHeaders, $allowedMethods) {
             if ($request->getMethod() === "OPTIONS") {
                 $response = new Response();
                 $response->headers->set("Access-Control-Allow-Origin", "*");
-                $response->headers->set("Access-Control-Allow-Methods", implode(",", $allowedMethods));
+                $response->headers->set("Access-Control-Allow-Methods", strtoupper(implode(",", $allowedMethods)));
                 $response->headers->set("Access-Control-Allow-Headers", implode(",", $allowedRequestHeaders));
 
                 $response->setStatusCode(200);
@@ -56,7 +49,7 @@ class CorsServiceProvider implements ServiceProviderInterface, BootableProviderI
         //handling CORS response with right headers
         $app->after(function (Request $request, Response $response) use ($allowedResponseHeaders, $allowedMethods) {
             $response->headers->set("Access-Control-Allow-Origin", "*");
-            $response->headers->set("Access-Control-Allow-Methods", implode(",", $allowedMethods));
+            $response->headers->set("Access-Control-Allow-Methods", strtoupper(implode(",", $allowedMethods)));
             $response->headers->set("Access-Control-Expose-Headers", implode(",", $allowedResponseHeaders));
         });
     }
