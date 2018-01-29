@@ -18,13 +18,7 @@ class RouteLoader
     /**
      * @var array
      */
-    protected $allowedMethods = [
-        "get" => true,
-        "post" => true,
-        "put" => true,
-        "delete" => true,
-        "patch" => true
-    ];
+    protected $allowedMethods;
 
     /**
      * @var Application
@@ -44,12 +38,14 @@ class RouteLoader
     /**
      * @param Application $application
      * @param SecurityContainer $securityContainer
+     * @param array|null $allowedMethods
      * @param array $loaders
      */
-    public function __construct(Application $application, SecurityContainer $securityContainer, array $loaders=[])
+    public function __construct(Application $application, SecurityContainer $securityContainer, array $allowedMethods, array $loaders = [])
     {
         $this->application = $application;
         $this->securityContainer = $securityContainer;
+        $this->allowedMethods = array_flip($allowedMethods);
 
         foreach ($loaders as $loader) {
             if ($loader instanceof LoaderInterface) {

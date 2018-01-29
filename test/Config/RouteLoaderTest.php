@@ -48,7 +48,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
 
         $this->controllerCollection->shouldReceive("bind");
 
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
 
         foreach ($expectedCalls as $call) {
             $this->app->shouldReceive($call["method"])->with($call["url"], $call["action"])->once()->andReturn($this->controllerCollection);
@@ -82,7 +82,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
         $this->app->shouldReceive("get")->andReturn($this->controllerCollection);
         $this->app->shouldReceive("post")->andReturn($this->controllerCollection);
 
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
         $loader->addLoader(new JsonLoader());
         $loader->addLoader(new YamlLoader());
 
@@ -456,7 +456,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
         $this->app->shouldReceive("post")->withArgs([$overrideUrl, \Mockery::any()])->atLeast()->once()->andReturn($this->controllerCollection);
 
         // create the loader and run the test
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
         $loader->addLoader(new JsonLoader());
 
         $loader->parseRoutes($routesFile);
@@ -481,4 +481,3 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
     }
 
 }
- 
