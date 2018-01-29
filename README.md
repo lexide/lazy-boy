@@ -139,6 +139,25 @@ Imported files are merged into a single configuration array before routes and gr
 conflicts arise, the latter import will overwrite the former and the importing file will take precedence over any 
 imported routes.
 
+### Configuration
+
+By default, the `RouteLoader` restricts HTTP methods to a set of the most commonly used methods: `GET`, `POST`, `PATCH`, 
+`PUT` and `DELETE`. This can be customised by changing the Syringe DI configuration value `router.allowedMethods`:
+
+```yaml
+parameters:
+    # ...
+    router.allowedMethods:
+        - "get"
+        - "post"
+        - "delete"
+        - "connect" # added CONNECT method
+        - "upsert"  # added custom / non-standard method 
+        # PUT and PATCH methods are now disabled (not present in the list)
+```
+
+Allowed method values are case insensitive
+
 ## Providers
 
 ### CORS Provider
@@ -168,18 +187,22 @@ additional headers or to restrict headers.
 
 ```yaml
 parameters:
-    cors.defaultAllowedMethods:
-# optional, automatically set to:
-#     ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    # defaults to the value of router.allowedMethods
     cors.allowedMethods:
-      - "CONNECT"
-      - "CUSTOM"
+        - "get" 
+        - "post"
+        - "put"
 ```
 
-The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to enable custom 
-methods or to use a more restricted list. The `OPTIONS` method is required for CORS to work, so it should always be an
-set in these lists. As with the request headers, the list of methods and default methods are merged together, so you 
-only need to set them if you need to make changes.
+The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to use a more 
+restricted list than the RouteLoader allows. In the above example, CORS requests will only be allowed for `GET`, `POST` 
+and `PUT` methods, so cross origin sources cannot make a request to `DELETE`. 
+
+The `OPTIONS` method is required for CORS to work, so is always added automatically; it is not required for it to be in 
+the configuration list
+
+Also, it should be obvious, but is worth noting that any allowed CORS methods that aren't in the `router.allowedMethods` 
+configuration list will not work as the `RouteLoader` will reject them
 
 ## Contributing
 
