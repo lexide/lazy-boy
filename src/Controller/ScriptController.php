@@ -50,7 +50,8 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
 
         // check for puzzle-di
         $puzzleConfigUseStatement = "";
-        $puzzleConfigLoadFiles = "";
+        $puzzleConfigLoadSyringeFiles = "";
+        $puzzleConfigLoadRouteFiles = "";
         $dependencies = $package->getRequires();
         $puzzleDiPackageName = "downsider/puzzle-di";
         if (!empty($dependencies[$puzzleDiPackageName])) {
@@ -74,9 +75,12 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
             }
 
             $puzzleConfigUseStatement = "use {$namespace}PuzzleConfig;";
-            $puzzleConfigLoadFiles =
+            $puzzleConfigLoadSyringeFiles =
                 '$puzzleConfigs = PuzzleConfig::getConfigPaths("silktide/syringe");' . "\n" .
                 '$builder->addConfigFiles($puzzleConfigs);';
+            $puzzleConfigLoadRouteFiles =
+                '$puzzleRoutes = PuzzleConfig::getConfigPaths("silktide/lazy-boy");' . "\n" .
+                '$frontController->addRouteFiles($puzzleRoutes);';
         }
 
         $templates = [
@@ -94,14 +98,17 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
                 $templateDir . "/app/bootstrap.php.temp",
                 [
                     "puzzleConfigUseStatement" => $puzzleConfigUseStatement,
-                    "puzzleConfigLoadFiles" => $puzzleConfigLoadFiles
+                    "puzzleConfigLoadFiles" => $puzzleConfigLoadSyringeFiles
                 ],
                 [$appDir . "/app/bootstrap.php"]
             ],
 
             "index" => [
                 $templateDir . "/web/index.php.temp",
-                [],
+                [
+                    "puzzleConfigUseStatement" => $puzzleConfigUseStatement,
+                    "puzzleConfigLoadFiles" => $puzzleConfigLoadRouteFiles
+                ],
                 [$appDir . "/web/index.php"]
             ],
             "htaccess" => [

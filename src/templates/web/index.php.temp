@@ -6,14 +6,16 @@ use Silex\Provider\ServiceControllerServiceProvider;
 use Silktide\LazyBoy\Provider\CorsServiceProvider;
 use Silktide\LazyBoy\Provider\JsonPostServiceProvider;
 use Silktide\LazyBoy\Provider\JsonErrorProvider;
+{{puzzleConfigUseStatement}}
 
 /** @var Silktide\Syringe\ContainerBuilder $builder */
 
-$configDir = realpath(__DIR__ . "/../app/config");
+$appDir = realpath(__DIR__ . "/../");
+$configDir = "$appDir/app/config");
 
 $frontController = new FrontController(
     $builder,
-    $configDir,
+    [$configDir, $appDir],
     "Silex\\Application",
     [
         new ServiceControllerServiceProvider(),
@@ -24,4 +26,7 @@ $frontController = new FrontController(
         new JsonErrorProvider()
     ]
 );
+
+{{puzzleConfigLoadFiles}}
+
 $frontController->runApplication();
