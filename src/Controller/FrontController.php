@@ -25,7 +25,7 @@ class FrontController
     /**
      * @var string
      */
-    protected $configDir;
+    protected $configPaths;
 
     /**
      * @var string
@@ -38,30 +38,46 @@ class FrontController
     protected $serviceProviders;
 
     /**
-     * @var string
+     * @var array
      */
-    protected $routeFilename = "routes.yml";
+    protected $routeFiles = ["routes.yml"];
 
     /**
      * @param ContainerBuilder $builder
-     * @param string $configDir
+     * @param array $configPaths
      * @param string $applicationClass
      * @param array $serviceProviders
      */
-    public function __construct(ContainerBuilder $builder, $configDir, $applicationClass, array $serviceProviders = [])
+    public function __construct(ContainerBuilder $builder, array $configPaths, $applicationClass, array $serviceProviders = [])
     {
         $this->builder = $builder;
-        $this->configDir = $configDir;
+        $this->configPaths = $configPaths;
         $this->setApplicationClass($applicationClass);
         $this->setProviders($serviceProviders);
     }
 
     /**
-     * @param string $filename
+     * @param string file
      */
-    public function setRouteFilename($filename)
+    public function addRouteFile($file)
     {
-        $this->routeFilename = $filename;
+        $this->routeFiles[] = $file;
+    }
+
+    /**
+     * @param array $files
+     */
+    public function addRouteFiles(array $files)
+    {
+        $this->routeFiles = array_merge($this->routeFiles, $files);
+    }
+
+    /**
+     * @param array $files
+     */
+    public function setRouteFiles(array $files)
+    {
+        $this->routeFiles = $files;
     }
 
     protected function setApplicationClass($applicationClass) {
@@ -112,9 +128,17 @@ class FrontController
         }
 
         // load routes
-        /** @var RouteLoader $routeLoader */
         $routeLoader = $application["routeLoader"];
-        $routeLoader->parseRoutes($this->configDir . "/" . $this->routeFilename);
+        foreach ($this->routeFiles as $routeFile) {
+            /** @var RouteLoader $routeLoader */
+            foreach ($this->configPaths AS $configPath) {
+                $filePath = $configPath . "/" . $routeFile;
+                if (file_exists($filePath)) {
+                    $routeLoader->parseRoutes($filePath);
+                    break;
+                }
+            }
+        }
 
         // run the app
         $application->run();
