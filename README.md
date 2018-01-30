@@ -139,13 +139,37 @@ Imported files are merged into a single configuration array before routes and gr
 conflicts arise, the latter import will overwrite the former and the importing file will take precedence over any 
 imported routes.
 
+### Library Installed Routes
+
+If Puzzle-DI is installed, libraries that have registered route files with Lazy Boy can have those files imported into
+the RouteLoader. Using this feature, libraries can autoload routes and their controllers directly into Silex, without
+needing for an application to be configured manually.
+
+The functionality is similar to how Syringe works with Puzzle-DI, so if you are familiar with Syringe, it should be easy 
+to add library routes.
+ 
+To register a route file from within a library, simply add the following code to the libraries composer.json file:
+
+```json
+"extra": {
+  "downsider-puzzle-di": {
+    "silktide/lazy-boy": [
+      "path": "[ path to the route file, relative to the library package root directory ]"
+    ]
+  }
+}
+```
+
+Now, when composer installs dependencies into the application, the library's route file will be configured to load 
+alongside any application routes.
+
 ## Contributing
 
 If you have improvements you would like to see, open an issue in this github project or better yet, fork the project,
 implement your changes and create a pull request.
 
 The project uses [PSR-2] code styles and we insist that these are strictly adhered to. Also, please make sure that your
-code works with php 5.4, so things like generators, `finally`, `empty(someFunction())`, etc... should be avoided
+code works with php 5.4, so things like generators, `finally`, `empty(someFunction())`, etc... should be avoided.
 
 ## Why "Lazy Boy"
 Because it likes REST, of course :)
