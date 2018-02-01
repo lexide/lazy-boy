@@ -114,7 +114,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
                     "puzzleConfigUseStatement" => $puzzleConfigUseStatement,
                     "puzzleConfigLoadFiles" => $puzzleConfigLoadRouteFiles
                 ],
-                [$appDir . "/web/index.php"]
+                "output" => $appDir . "/web/index.php"
             ],
             "htaccess" => [
                 "template" => $templateDir . "/web/.htaccess.temp",
