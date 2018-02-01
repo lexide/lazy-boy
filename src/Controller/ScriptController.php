@@ -160,7 +160,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
             if (!isset($whiteListedPackages[$packageName])) {
                 // this package is not allowed to register templates
                 continue;
-        }
+            }
 
             // add any templates that this package has defined
             // this will overwrite any existing template of the same name, unless it is protected
