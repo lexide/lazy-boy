@@ -110,7 +110,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
 
             "index" => [
                 "template" => $templateDir . "/web/index.php.temp",
-                "replacements" => [,
+                "replacements" => [
                     "puzzleConfigUseStatement" => $puzzleConfigUseStatement,
                     "puzzleConfigLoadFiles" => $puzzleConfigLoadRouteFiles
                 ],
