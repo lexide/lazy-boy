@@ -7,7 +7,7 @@
   "require": {
     "php": ">=5.4.0",
     "silex/silex": "^2.0",
-    "lexide/syringe": "^1.0",
+    "lexide/syringe": "^2.1.0",
     "composer-plugin-api": "^1.0"
   },
   "require-dev": {
