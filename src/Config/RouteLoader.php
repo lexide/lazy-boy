@@ -18,13 +18,7 @@ class RouteLoader
     /**
      * @var array
      */
-    protected $allowedMethods = [
-        "get" => true,
-        "post" => true,
-        "put" => true,
-        "delete" => true,
-        "patch" => true
-    ];
+    protected $allowedMethods;
 
     /**
      * @var Application
@@ -44,18 +38,37 @@ class RouteLoader
     /**
      * @param Application $application
      * @param SecurityContainer $securityContainer
+     * @param array $allowedMethods
      * @param array $loaders
      */
-    public function __construct(Application $application, SecurityContainer $securityContainer, array $loaders=[])
-    {
+    public function __construct(
+        Application $application,
+        SecurityContainer $securityContainer,
+        array $allowedMethods,
+        array $loaders = []
+    ) {
         $this->application = $application;
         $this->securityContainer = $securityContainer;
+        $this->setAllowedMethods($allowedMethods);
 
         foreach ($loaders as $loader) {
             if ($loader instanceof LoaderInterface) {
                 $this->addLoader($loader);
             }
         }
+    }
+
+    /**
+     * @param array $allowedMethods
+     */
+    protected function setAllowedMethods(array $allowedMethods)
+    {
+        $this->allowedMethods = array_flip( // flip so we can use isset()
+            array_map( // normalise values to uppercase
+                "strtoupper",
+                $allowedMethods
+            )
+        );
     }
 
     /**
@@ -110,9 +123,9 @@ class RouteLoader
                     throw new RouteException("The data for the '$routeName' route is missing required elements");
                 }
                 if (empty($config["method"])) {
-                    $config["method"] = "get";
+                    $config["method"] = "GET";
                 } else {
-                    $config["method"] = strtolower($config["method"]);
+                    $config["method"] = strtoupper($config["method"]);
                     // check method is allowed
                     if (!isset($this->allowedMethods[$config["method"]])) {
                         throw new RouteException("The method '{$config["method"]}' for route '$routeName' is not allowed");
@@ -122,7 +135,10 @@ class RouteLoader
                 /**
                  * @var Controller $controller
                  */
-                $controller = $this->application->{$config["method"]}($url, $config["action"])->bind($routeName);
+                $controller = $this->application
+                    ->match($url, $config["action"])
+                    ->method($config["method"])
+                    ->bind($routeName);
 
                 if (isset($config["assert"]) && is_array($config["assert"])) {
                     foreach ($config["assert"] as $variable => $regex) {

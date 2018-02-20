@@ -2,12 +2,15 @@
 
 namespace Lexide\LazyBoy\Test\Config;
 
+use Mockery\Mock;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
+use Silex\Application;
+use Silex\ControllerCollection;
+use Silex\Route;
 use Lexide\LazyBoy\Config\RouteLoader;
 use Lexide\LazyBoy\Exception\RouteException;
-use Silex\Application;
 use Lexide\Syringe\Loader\JsonLoader;
 use Lexide\Syringe\Loader\YamlLoader;
 use Lexide\LazyBoy\Security\SecurityContainer;
@@ -15,20 +18,28 @@ use Lexide\LazyBoy\Security\SecurityContainer;
 class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
 
     /**
-     * @var \Mockery\Mock|Application
+     * @var Application|Mock
      */
     protected $app;
 
     /**
-     * @var \Mockery\Mock|SecurityContainer
+     * @var SecurityContainer|Mock
      */
     protected $securityContainer;
 
-    /** @var \Mockery\Mock $controllerCollection */
+    /**
+     * @var ControllerCollection|Mock $controllerCollection
+     */
     protected $controllerCollection;
+
+    /**
+     * @var Route|Mock
+     */
+    protected $route;
 
     public function setUp()
     {
+        $this->route = \Mockery::mock("Silex\\Route");
         $this->controllerCollection = \Mockery::mock("Silex\\ContainerCollection");
         $this->app = \Mockery::mock("Silex\\Application");
         $this->securityContainer = \Mockery::mock("Lexide\\LazyBoy\\Security\\SecurityContainer");
@@ -48,10 +59,11 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
 
         $this->controllerCollection->shouldReceive("bind");
 
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
 
         foreach ($expectedCalls as $call) {
-            $this->app->shouldReceive($call["method"])->with($call["url"], $call["action"])->once()->andReturn($this->controllerCollection);
+            $this->app->shouldReceive("match")->with($call["url"], $call["action"])->once()->andReturn($this->route);
+            $this->route->shouldReceive("method")->with(strtoupper($call["method"]))->once()->andReturn($this->controllerCollection);
         }
 
         try {
@@ -79,10 +91,11 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             ++$counts[$routeName];
         });
 
-        $this->app->shouldReceive("get")->andReturn($this->controllerCollection);
-        $this->app->shouldReceive("post")->andReturn($this->controllerCollection);
+        $this->app->shouldReceive("match")->andReturn($this->route);
+        $this->route->shouldReceive("method")->with("GET")->andReturn($this->controllerCollection);
+        $this->route->shouldReceive("method")->with("POST")->andReturn($this->controllerCollection);
 
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
         $loader->addLoader(new JsonLoader());
         $loader->addLoader(new YamlLoader());
 
@@ -451,12 +464,16 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             ++$counts[$routeName];
         });
 
-        $this->app->shouldReceive("get")->andReturn($this->controllerCollection);
+        $this->route->shouldReceive("method")->with("GET")->andReturn($this->controllerCollection);
+        $this->route->shouldReceive("method")->with("POST")->atLeast()->once()->andReturn($this->controllerCollection);
         // add check to make sure the overridden route uses the correct version (from the "root"-most file)
-        $this->app->shouldReceive("post")->withArgs([$overrideUrl, \Mockery::any()])->atLeast()->once()->andReturn($this->controllerCollection);
+        $this->app->shouldReceive("match")->withArgs([$overrideUrl, \Mockery::any()])->atLeast()->once()->andReturn($this->route);
+
+        // add default expectation for match last, so it doesn't interfere with the more specific expectation above
+        $this->app->shouldReceive("match")->andReturn($this->route);
 
         // create the loader and run the test
-        $loader = new RouteLoader($this->app, $this->securityContainer);
+        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
         $loader->addLoader(new JsonLoader());
 
         $loader->parseRoutes($routesFile);

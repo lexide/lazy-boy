@@ -178,6 +178,71 @@ composer.json:
 Now, when composer installs dependencies into the application, the library's route file will be configured to load 
 alongside any application routes.
 
+### Configuration
+
+By default, the `RouteLoader` restricts HTTP methods to a set of the most commonly used methods: `GET`, `POST`, `PATCH`, 
+`PUT` and `DELETE`. This can be customised by changing the Syringe DI configuration value `router.allowedMethods`:
+
+```yaml
+parameters:
+    # ...
+    router.allowedMethods:
+        - "get"
+        - "post"
+        - "delete"
+        - "connect" # added CONNECT method
+        - "upsert"  # added custom / non-standard method 
+        # PUT and PATCH methods are now disabled (not present in the list)
+```
+
+Allowed method values are case insensitive
+
+## Providers
+
+### CORS Provider
+
+The CORS provider can be used to give your API the ability to accept cross domain requests. It is enabled by default and 
+can be configured by adding the following parameters to your app's syringe config:
+
+#### Allowed Headers
+
+```yaml
+parameters:
+    cors.request.defaultHeaders:
+# optional, automatically set to:
+#     ["Content-Type", "Authorization"]
+    cors.request.headers:
+      - "X-CUSTOM-REQUEST_HEADER"
+    cors.response.headers:
+      - "X-CUSTOM-RESPONSE-HEADER"
+```
+
+These parameters allow for additional headers to be sent and received by the client. `cors.request.defaultHeaders` 
+contains the headers commonly required by Lazy-Boy apps, but can be overwritten if these headers need to be removed. The 
+headers and defaultHeaders are merged together, so you only need to set these configuration options if you need to use
+additional headers or to restrict headers.
+
+#### Allowed Methods
+
+```yaml
+parameters:
+    # defaults to the value of router.allowedMethods
+    cors.allowedMethods:
+        - "get" 
+        - "post"
+        - "put"
+```
+
+The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to use a more 
+restricted list than the RouteLoader allows. In the above example, CORS requests will only be allowed for `GET`, `POST` 
+and `PUT` methods, so cross origin sources cannot make a request to `DELETE`. 
+
+The `OPTIONS` method is required for CORS to work, so is always added automatically; it is not required for it to be in 
+the configuration list
+
+Also, it should be obvious, but is worth noting that any allowed CORS methods that aren't in the `router.allowedMethods` 
+configuration list will not work as the `RouteLoader` will reject them
+
 ## Custom Templates
 
 Lazy Boy uses a simple template system to create standard config and entry point files. It is possible to hook into this

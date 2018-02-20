@@ -2,6 +2,13 @@ parameters:
   securityContainer.defaultSecurity:
     public: true
 
+  router.allowedMethods:
+    - "get"
+    - "post"
+    - "put"
+    - "delete"
+    - "patch"
+
   debug: false
 
 services:
@@ -10,6 +17,7 @@ services:
     arguments:
       - "@app"
       - "@securityContainer"
+      - "%router.allowedMethods%"
       -
         - "@yaml.loader"
         - "@json.loader"
