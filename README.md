@@ -19,7 +19,7 @@ class). You can also use [Puzzle-DI] to load service configuration from modules.
 ## Installation
 install using composer:
 
-    composer require silktide/lazy-boy:^2.0
+    composer require Lexide/lazy-boy:^2.0
 
 Lazy Boy will automatically generate several files from templates, whenever `composer update` or `composer install` is run.
 You are free to make modifications; Lazy Boy will not overwrite a file which already exists, so committing those changes 
@@ -31,7 +31,7 @@ following to your composer file:
 
 ```json
 "extra": {
-  "silktide/lazy-boy": {
+  "lexide/lazy-boy": {
     "prevent-install": true
   }
 }
@@ -148,14 +148,29 @@ needing for an application to be configured manually.
 The functionality is similar to how Syringe works with Puzzle-DI, so if you are familiar with Syringe, it should be easy 
 to add library routes.
  
-To register a route file from within a library, simply add the following code to the libraries composer.json file:
+To register a route file from within a library, add the following code to the libraries composer.json file:
 
 ```json
 "extra": {
-  "downsider-puzzle-di": {
-    "silktide/lazy-boy": [
+  "lexide/puzzle-di": {
+    "lexide/lazy-boy": [
       "path": "[ path to the route file, relative to the library package root directory ]"
     ]
+  }
+}
+```
+
+Also, you will need to whitelist our library for use with puzzle-di by adding the following to the application's 
+composer.json:
+
+```json
+"extra": {
+  "lexide/puzzle-di": {
+    "whitelist": {
+      "lexide/lazy-boy": [
+        "[ your library's package name ]"
+      ]
+    }
   }
 }
 ```
@@ -168,17 +183,18 @@ alongside any application routes.
 Lazy Boy uses a simple template system to create standard config and entry point files. It is possible to hook into this
 system to extend Lazy Boy and install custom templates.
 
-The extending library should be used as Lazy Boy is; required into an application as a composer dependency. The library 
-itself should require Lazy Boy as normal, but then add extra data to the composer.json file to configure the templates:
+The extending library should be installed in the same manner as Lazy Boy; required into an application as a composer 
+dependency. The library itself should require Lazy Boy as normal, but then add extra data to the composer.json file to 
+configure the templates:
 
 ```json
 {
-  "name": "silktide/lazy-boy-extension",
+  "name": "lexide/lazy-boy-extension",
   "require": {
     "lazy-boy": "^2.0.0"
   },
   "extra": {
-    "silktide/lazy-boy": {
+    "lexide/lazy-boy": {
       "templates": {
         "template-name": {
           "template": "[ file path of the template, relative to the library package root directory]",
@@ -222,7 +238,7 @@ to the applications composer.json file
 
 ```json
 "extra": {
-  "silktide/lazy-boy": {
+  "lexide/lazy-boy": {
     "whiteListedPackages": [
       "your/package-name"
     ]
@@ -243,7 +259,7 @@ Because it likes REST, of course :)
 
 
 [Silex]: https://github.com/silexphp/silex
-[Syringe]: https://github.com/silktide/syringe
-[Puzzle-DI]: https://github.com/downsider/puzzle-di
+[Syringe]: https://github.com/Lexide/syringe
+[Puzzle-DI]: https://github.com/lexide/puzzle-di
 [Symfony console]: https://github.com/symfony/console
 [PSR-2]: https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md

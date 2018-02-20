@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Controller;
+namespace Lexide\LazyBoy\Controller;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 

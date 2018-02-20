@@ -1,13 +1,13 @@
 <?php
 
-namespace Silktide\LazyBoy\Controller;
+namespace Lexide\LazyBoy\Controller;
 
 use Pimple\ServiceProviderInterface;
 use Silex\Api\BootableProviderInterface;
-use Silktide\Syringe\ContainerBuilder;
+use Lexide\Syringe\ContainerBuilder;
 use Silex\Application;
-use Silktide\LazyBoy\Config\RouteLoader;
-use Silktide\Syringe\SyringeServiceProvider;
+use Lexide\LazyBoy\Config\RouteLoader;
+use Lexide\Syringe\SyringeServiceProvider;
 
 /**
  * FrontController - loads routes, builds and runs the application

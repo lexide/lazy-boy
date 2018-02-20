@@ -4,7 +4,7 @@ include_once("bootstrap.php");
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 
-/** @var Silktide\Syringe\ContainerBuilder $builder */
+/** @var Lexide\Syringe\ContainerBuilder $builder */
 $container = $builder->createContainer();
 
 // find all commands and add them to the application

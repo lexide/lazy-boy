@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Controller;
+namespace Lexide\LazyBoy\Controller;
 
 use Composer\Composer;
 use Composer\EventDispatcher\EventSubscriberInterface;
@@ -8,7 +8,7 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
-use Silktide\LazyBoy\Exception\InstallationException;
+use Lexide\LazyBoy\Exception\InstallationException;
 use Composer\Package\PackageInterface;
 
 /**
@@ -39,13 +39,13 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
         $extra = $package->getExtra();
         if (
             !empty($extra["lazy-boy"]["prevent-install"]) ||
-            !empty($extra["silktide/lazy-boy"]["prevent-install"])
+            !empty($extra["lexide/lazy-boy"]["prevent-install"])
         ) {
             return;
         }
 
         $lazyBoyDir = $composer->getInstallationManager()->getInstallPath(
-            $composer->getRepositoryManager()->findPackage("silktide/lazy-boy", "*")
+            $composer->getRepositoryManager()->findPackage("lexide/lazy-boy", "*")
         );
 
         // template dir
@@ -58,7 +58,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
         $puzzleConfigLoadSyringeFiles = "";
         $puzzleConfigLoadRouteFiles = "";
         $dependencies = $package->getRequires();
-        $puzzleDiPackageName = "downsider/puzzle-di";
+        $puzzleDiPackageName = "lexide/puzzle-di";
         if (!empty($dependencies[$puzzleDiPackageName])) {
             // find PuzzleConfig's namespace
             if (!empty($extra[$puzzleDiPackageName]["namespace"])) {
@@ -81,10 +81,10 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
 
             $puzzleConfigUseStatement = "use {$namespace}PuzzleConfig;";
             $puzzleConfigLoadSyringeFiles =
-                '$puzzleConfigs = PuzzleConfig::getConfigPaths("silktide/syringe");' . "\n" .
+                '$puzzleConfigs = PuzzleConfig::getConfigPaths("lexide/syringe");' . "\n" .
                 '$builder->addConfigFiles($puzzleConfigs);';
             $puzzleConfigLoadRouteFiles =
-                '$puzzleRoutes = PuzzleConfig::getConfigPaths("silktide/lazy-boy");' . "\n" .
+                '$puzzleRoutes = PuzzleConfig::getConfigPaths("lexide/lazy-boy");' . "\n" .
                 '$frontController->addRouteFiles($puzzleRoutes);';
         }
 
@@ -128,7 +128,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
         // loop through the packages and check the package name
         $packages = $repo->getPackages();
 
-        $whiteListedPackages = !empty($extra["silktide/lazy-boy"]["whiteListedPackages"])? $extra["silktide/lazy-boy"]["whiteListedPackages"]: [];
+        $whiteListedPackages = !empty($extra["lexide/lazy-boy"]["whiteListedPackages"])? $extra["lexide/lazy-boy"]["whiteListedPackages"]: [];
         $whiteListedPackages = is_array($whiteListedPackages)? array_flip($whiteListedPackages): [];
 
         $protectedTemplates = ["bootstrap" => true];
@@ -146,15 +146,6 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
                         "output" => $appDir . "/app/console.php"
                     ];
                     break;
-
-                // TODO: Deprecated usage. This should be removed when the doctrine-wrapper registers its template through composer
-                case "silktide/doctrine-wrapper":
-                    $templates["doctrine"] = [
-                        "template" => $templateDir . "/cli-config.php.temp",
-                        "replacements" => [],
-                        "output" => $appDir . "/cli-config.php"
-                    ];
-                    break;
             }
 
             if (!isset($whiteListedPackages[$packageName])) {
@@ -166,8 +157,8 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
             // this will overwrite any existing template of the same name, unless it is protected
             $extra = $package->getExtra();
 
-            if (!empty($extra["silktide/lazy-boy"]["templates"]) && is_array($extra["silktide/lazy-boy"]["templates"])) {
-                foreach ($extra["silktide/lazy-boy"]["templates"] as $templateName => $config) {
+            if (!empty($extra["lexide/lazy-boy"]["templates"]) && is_array($extra["lexide/lazy-boy"]["templates"])) {
+                foreach ($extra["lexide/lazy-boy"]["templates"] as $templateName => $config) {
 
                     // prevent protected templates being overwritten
                     if (isset($protectedTemplates[$templateName])) {

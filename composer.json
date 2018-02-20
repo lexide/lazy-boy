@@ -1,13 +1,13 @@
 {
-  "name": "silktide/lazy-boy",
+  "name": "lexide/lazy-boy",
   "description": "A skeleton REST API application, using Silex and Syringe with support for Puzzle-DI",
   "type": "composer-plugin",
   "license": "MIT",
-  "homepage": "https://github.com/silktide/lazy-boy",
+  "homepage": "https://github.com/lexide/lazy-boy",
   "require": {
     "php": ">=5.4.0",
     "silex/silex": "^2.0",
-    "silktide/syringe": "^1.0",
+    "lexide/syringe": "^1.0",
     "composer-plugin-api": "^1.0"
   },
   "require-dev": {
@@ -18,21 +18,20 @@
   },
   "suggest": {
     "symfony/console": "Run CLI commands",
-    "downsider/puzzle-di": "Allow installed modules to set up dependency injection for their components",
-    "silktide/doctrine-wrapper": "Gives us the base classes needed to use Doctrine in a DI approach"
+    "lexide/puzzle-di": "Allow installed modules to set up dependency injection for their components"
   },
   "autoload": {
     "psr-4": {
-      "Silktide\\LazyBoy\\": "src",
-      "Silktide\\LazyBoy\\Test\\": "test"
+      "Lexide\\LazyBoy\\": "src",
+      "Lexide\\LazyBoy\\Test\\": "test"
     }
   },
   "extra": {
-    "class": "Silktide\\LazyBoy\\Controller\\ScriptController"
+    "class": "Lexide\\LazyBoy\\Controller\\ScriptController"
   },
   "scripts": {
     "install-lazy-boy": [
-      "Silktide\\LazyBoy\\Controller\\ScriptController::install"
+      "Lexide\\LazyBoy\\Controller\\ScriptController::install"
     ]
   }
 }

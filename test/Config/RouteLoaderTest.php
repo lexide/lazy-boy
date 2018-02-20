@@ -1,16 +1,16 @@
 <?php
 
-namespace Silktide\LazyBoy\Test\Config;
+namespace Lexide\LazyBoy\Test\Config;
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
-use Silktide\LazyBoy\Config\RouteLoader;
-use Silktide\LazyBoy\Exception\RouteException;
+use Lexide\LazyBoy\Config\RouteLoader;
+use Lexide\LazyBoy\Exception\RouteException;
 use Silex\Application;
-use Silktide\Syringe\Loader\JsonLoader;
-use Silktide\Syringe\Loader\YamlLoader;
-use Silktide\LazyBoy\Security\SecurityContainer;
+use Lexide\Syringe\Loader\JsonLoader;
+use Lexide\Syringe\Loader\YamlLoader;
+use Lexide\LazyBoy\Security\SecurityContainer;
 
 class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
 
@@ -31,7 +31,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
     {
         $this->controllerCollection = \Mockery::mock("Silex\\ContainerCollection");
         $this->app = \Mockery::mock("Silex\\Application");
-        $this->securityContainer = \Mockery::mock("Silktide\\LazyBoy\\Security\\SecurityContainer");
+        $this->securityContainer = \Mockery::mock("Lexide\\LazyBoy\\Security\\SecurityContainer");
 
         vfsStreamWrapper::register();
     }
@@ -98,7 +98,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $loader->parseRoutes("nonExistentFile");
             $this->fail("Should not be able to parse routes with a non existent file");
         } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Silktide\\LazyBoy\\Exception\\RouteException", $e);
+            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
             $this->assertRegExp("/Cannot load routes/", $e->getMessage());
             unset($e);
         }
@@ -114,7 +114,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $loader->parseRoutes($routesFile);
             $this->fail("Should not be able to parse routes from an invalid JSON file");
         } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Silktide\\LazyBoy\\Exception\\RouteException", $e);
+            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
             $this->assertRegExp("/Could not load the JSON file/", $e->getMessage());
             unset($e);
         }
@@ -137,7 +137,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $loader->parseRoutes($routesFile);
             $this->fail("Should not be able to parse routes from an invalid Yaml file");
         } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Silktide\\LazyBoy\\Exception\\RouteException", $e);
+            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
             $this->assertRegExp("/Could not load the YAML file/", $e->getMessage());
         }
 
@@ -481,4 +481,3 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
     }
 
 }
- 

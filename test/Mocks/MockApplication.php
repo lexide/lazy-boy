@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Silktide\LazyBoy\Test\Mocks;
+namespace Lexide\LazyBoy\Test\Mocks;
 
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

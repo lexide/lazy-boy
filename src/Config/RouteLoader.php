@@ -1,13 +1,13 @@
 <?php
 
-namespace Silktide\LazyBoy\Config;
+namespace Lexide\LazyBoy\Config;
 
 use Silex\Application;
 use Silex\Controller;
-use Silktide\LazyBoy\Exception\RouteException;
-use Silktide\LazyBoy\Security\SecurityContainer;
-use Silktide\Syringe\Exception\LoaderException;
-use Silktide\Syringe\Loader\LoaderInterface;
+use Lexide\LazyBoy\Exception\RouteException;
+use Lexide\LazyBoy\Security\SecurityContainer;
+use Lexide\Syringe\Exception\LoaderException;
+use Lexide\Syringe\Loader\LoaderInterface;
 
 /**
  * Load routes into the application

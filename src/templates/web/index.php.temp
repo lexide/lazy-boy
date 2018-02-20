@@ -1,14 +1,14 @@
 <?php
 include_once("../app/bootstrap.php");
 
-use Silktide\LazyBoy\Controller\FrontController;
+use Lexide\LazyBoy\Controller\FrontController;
 use Silex\Provider\ServiceControllerServiceProvider;
-use Silktide\LazyBoy\Provider\CorsServiceProvider;
-use Silktide\LazyBoy\Provider\JsonPostServiceProvider;
-use Silktide\LazyBoy\Provider\JsonErrorProvider;
+use Lexide\LazyBoy\Provider\CorsServiceProvider;
+use Lexide\LazyBoy\Provider\JsonPostServiceProvider;
+use Lexide\LazyBoy\Provider\JsonErrorProvider;
 {{puzzleConfigUseStatement}}
 
-/** @var Silktide\Syringe\ContainerBuilder $builder */
+/** @var Lexide\Syringe\ContainerBuilder $builder */
 
 $appDir = realpath(__DIR__ . "/../");
 $configDir = "$appDir/app/config";

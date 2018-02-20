@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Provider;
+namespace Lexide\LazyBoy\Provider;
 
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;

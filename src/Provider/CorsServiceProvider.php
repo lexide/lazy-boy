@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Provider;
+namespace Lexide\LazyBoy\Provider;
 
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;

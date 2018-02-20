@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Exception;
+namespace Lexide\LazyBoy\Exception;
 
 /**
  *

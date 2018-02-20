@@ -4,10 +4,10 @@ $appDir = dirname(__DIR__);
 
 include_once($appDir . "/vendor/autoload.php");
 
-use Silktide\Syringe\ReferenceResolver;
-use Silktide\Syringe\ContainerBuilder;
-use Silktide\Syringe\Loader\JsonLoader;
-use Silktide\Syringe\Loader\YamlLoader;
+use Lexide\Syringe\ReferenceResolver;
+use Lexide\Syringe\ContainerBuilder;
+use Lexide\Syringe\Loader\JsonLoader;
+use Lexide\Syringe\Loader\YamlLoader;
 {{puzzleConfigUseStatement}}
 
 $resolver = new ReferenceResolver();

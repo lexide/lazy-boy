@@ -1,6 +1,6 @@
 <?php
 
-namespace Silktide\LazyBoy\Security;
+namespace Lexide\LazyBoy\Security;
 
 /**
  * SecurityContainer

@@ -1,16 +1,13 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
-namespace Silktide\LazyBoy\Test;
+namespace Lexide\LazyBoy\Test;
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
-use Silktide\LazyBoy\Controller\FrontController;
-use Silktide\LazyBoy\Test\Mocks\MockApplication;
-use Silktide\Syringe\ContainerBuilder;
-use Silktide\LazyBoy\Config\RouteLoader;
+use Lexide\LazyBoy\Controller\FrontController;
+use Lexide\LazyBoy\Test\Mocks\MockApplication;
+use Lexide\Syringe\ContainerBuilder;
+use Lexide\LazyBoy\Config\RouteLoader;
 use Silex\Application;
 use Silex\Provider\ServiceControllerServiceProvider;
 
@@ -42,8 +39,8 @@ class FrontControllerTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->builder = \Mockery::mock("Silktide\\Syringe\\ContainerBuilder")->shouldIgnoreMissing();
-        $this->routeLoader = \Mockery::mock("Silktide\\LazyBoy\\RouteLoader")->shouldIgnoreMissing();
+        $this->builder = \Mockery::mock("Lexide\\Syringe\\ContainerBuilder")->shouldIgnoreMissing();
+        $this->routeLoader = \Mockery::mock("Lexide\\LazyBoy\\RouteLoader")->shouldIgnoreMissing();
         $this->application = \Mockery::mock("Silex\\Application")->shouldIgnoreMissing();
         $this->serviceProvider = \Mockery::mock("Pimple\\ServiceProviderInterface")->shouldIgnoreMissing();
 
