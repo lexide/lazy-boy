@@ -91,7 +91,6 @@ class RouteLoader
             $routes = $this->loadFile($routes);
         }
 
-        $hasProcessed = false;
         // process groups
         if (!empty($routes["groups"])) {
             if (!is_array($routes["groups"])) {
@@ -103,7 +102,6 @@ class RouteLoader
                     throw new RouteException("The group '$groupName' does not have a URL associated with it");
                 }
                 $this->parseRoutes($config, $baseUrl . $config["urlPrefix"]);
-                $hasProcessed = true;
             }
 
         }
@@ -156,12 +154,7 @@ class RouteLoader
                 if ($security !== null) {
                     $this->securityContainer->setSecurityForRoute($routeName, $security);
                 }
-                $hasProcessed = true;
             }
-        }
-
-        if (!$hasProcessed) {
-            throw new RouteException("The routes configuration was empty. No routes or groups were defined for '$baseUrl'");
         }
 
     }
