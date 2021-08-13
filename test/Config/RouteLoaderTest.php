@@ -2,10 +2,12 @@
 
 namespace Lexide\LazyBoy\Test\Config;
 
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\Mock;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
+use PHPUnit\Framework\TestCase;
 use Silex\Application;
 use Silex\ControllerCollection;
 use Silex\Route;
@@ -15,7 +17,9 @@ use Lexide\Syringe\Loader\JsonLoader;
 use Lexide\Syringe\Loader\YamlLoader;
 use Lexide\LazyBoy\Security\SecurityContainer;
 
-class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
+class RouteLoaderTest extends TestCase
+{
+    use MockeryPHPUnitIntegration;
 
     /**
      * @var Application|Mock
@@ -37,7 +41,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
      */
     protected $route;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->route = \Mockery::mock("Silex\\Route");
         $this->controllerCollection = \Mockery::mock("Silex\\ContainerCollection");
@@ -70,12 +74,14 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $loader->parseRoutes($routes);
             if (!empty($exceptionPattern)) {
                 $this->fail("The RouteLoader did not throw an exception as expected");
+            } elseif (empty($expectedCalls)) {
+                $this->expectNotToPerformAssertions();
             }
         } catch (RouteException $e) {
             if (empty($exceptionPattern)) {
                 throw $e;
             } else {
-                $this->assertRegExp($exceptionPattern, $e->getMessage());
+                $this->assertMatchesRegularExpression($exceptionPattern, $e->getMessage());
             }
         }
 
@@ -112,7 +118,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $this->fail("Should not be able to parse routes with a non existent file");
         } catch (\Exception $e) {
             $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertRegExp("/Cannot load routes/", $e->getMessage());
+            $this->assertMatchesRegularExpression("/Cannot load routes/", $e->getMessage());
             unset($e);
         }
 
@@ -128,7 +134,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $this->fail("Should not be able to parse routes from an invalid JSON file");
         } catch (\Exception $e) {
             $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertRegExp("/Could not load the JSON file/", $e->getMessage());
+            $this->assertMatchesRegularExpression("/Could not load the JSON file/", $e->getMessage());
             unset($e);
         }
 
@@ -151,7 +157,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
             $this->fail("Should not be able to parse routes from an invalid Yaml file");
         } catch (\Exception $e) {
             $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertRegExp("/Could not load the YAML file/", $e->getMessage());
+            $this->assertMatchesRegularExpression("/Could not load the YAML file/", $e->getMessage());
         }
 
         // Test that we can correctly parse YAML
@@ -492,7 +498,7 @@ class RouteLoaderTest extends \PHPUnit_Framework_TestCase {
         }
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         \Mockery::close();
     }

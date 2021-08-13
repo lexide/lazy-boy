@@ -157,6 +157,10 @@ class RouteLoader
             }
         }
 
+        if (empty($routes["routes"]) && empty($routes["groups"])) {
+            throw new RouteException("No routes or groups were found for '$baseUrl'");
+        }
+
     }
 
 
