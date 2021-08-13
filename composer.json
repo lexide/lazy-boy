@@ -5,16 +5,16 @@
   "license": "MIT",
   "homepage": "https://github.com/lexide/lazy-boy",
   "require": {
-    "php": ">=5.4.0",
+    "php": ">=7.3.0",
     "silex/silex": "^2.0",
-    "lexide/syringe": "^2.1.0",
-    "composer-plugin-api": "^1.0"
+    "lexide/syringe": "~2.2.0",
+    "composer-plugin-api": "^1.0 || ^2.0"
   },
   "require-dev": {
-    "composer/composer": "1.0.*@dev",
-    "phpunit/phpunit": "4.*",
-    "mockery/mockery": "0.9.*",
-    "mikey179/vfsstream": "1.4.*"
+    "composer/composer": "2.0.*@dev",
+    "phpunit/phpunit": "^9.0.0",
+    "mockery/mockery": "^1.4.0",
+    "mikey179/vfsstream": "^1.4.0"
   },
   "suggest": {
     "symfony/console": "Run CLI commands",

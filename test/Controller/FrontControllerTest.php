@@ -1,6 +1,7 @@
 <?php
 namespace Lexide\LazyBoy\Test;
 
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
@@ -8,14 +9,16 @@ use Lexide\LazyBoy\Controller\FrontController;
 use Lexide\LazyBoy\Test\Mocks\MockApplication;
 use Lexide\Syringe\ContainerBuilder;
 use Lexide\LazyBoy\Config\RouteLoader;
+use PHPUnit\Framework\TestCase;
 use Silex\Application;
 use Silex\Provider\ServiceControllerServiceProvider;
 
 /**
  *
  */
-class FrontControllerTest extends \PHPUnit_Framework_TestCase
+class FrontControllerTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
 
     /**
      * @var \Mockery\Mock|ContainerBuilder
@@ -37,7 +40,7 @@ class FrontControllerTest extends \PHPUnit_Framework_TestCase
      */
     protected $serviceProvider;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->builder = \Mockery::mock("Lexide\\Syringe\\ContainerBuilder")->shouldIgnoreMissing();
         $this->routeLoader = \Mockery::mock("Lexide\\LazyBoy\\RouteLoader")->shouldIgnoreMissing();
@@ -50,22 +53,29 @@ class FrontControllerTest extends \PHPUnit_Framework_TestCase
     public function testSettingApplicationClass()
     {
         // default class
-        $class = FrontController::DEFAULT_APPLICATION_CLASS;
-        $controller = new FrontController($this->builder, [""], $class);
-        $this->assertAttributeEquals($class, "applicationClass", $controller);
+        try {
+            $class = FrontController::DEFAULT_APPLICATION_CLASS;
+            new FrontController($this->builder, [""], $class);
+        } catch (\InvalidArgumentException $e) {
+            $this->fail("The default application class did not set on the FrontController");
+        }
 
         // subclass
-        $class = get_class($this->application);
-        $controller = new FrontController($this->builder, [""], $class);
-        $this->assertAttributeEquals($class, "applicationClass", $controller);
+        try {
+            $class = get_class($this->application);
+             new FrontController($this->builder, [""], $class);
+        } catch (\InvalidArgumentException $e) {
+            $this->fail("The custom application subclass did not set on the FrontController");
+        }
 
         // invalid class
         try {
-            $controller = new FrontController($this->builder, [""], __CLASS__);
+            new FrontController($this->builder, [""], __CLASS__);
             $this->fail("Should not be able to create a FrontController with an invalid application class");
         } catch (\InvalidArgumentException $e) {
         }
 
+        $this->expectNotToPerformAssertions();
     }
 
     public function testApplicationRun()
@@ -169,7 +179,7 @@ class FrontControllerTest extends \PHPUnit_Framework_TestCase
 
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         \Mockery::close();
     }

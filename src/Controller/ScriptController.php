@@ -220,7 +220,7 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
 
     }
 
-    protected static function processTemplate($templateFilePath, array $replacements = [], $outputFilePaths, IOInterface $output)
+    protected static function processTemplate($templateFilePath, array $replacements, $outputFilePaths, IOInterface $output)
     {
 
         if (!is_array($outputFilePaths)) {
@@ -264,4 +264,13 @@ class ScriptController implements PluginInterface, EventSubscriberInterface
         $output->write("<info>LazyBoy:</info> <comment>Created file '$outputFilePath'</comment>");
     }
 
-} 
+    public function deactivate(Composer $composer, IOInterface $io)
+    {
+        // nothing to do here
+    }
+
+    public function uninstall(Composer $composer, IOInterface $io)
+    {
+        $io->write("<info>LazyBoy:</info> <comment>Uninstalling </comment>WILL NOT<comment> remove generated files. This must be done manually</comment>");
+    }
+}
