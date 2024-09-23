@@ -5,7 +5,7 @@ use Lexide\LazyBoy\Config\RouteLoader;
 use Psr\Log\LoggerInterface;
 use Slim\App;
 
-include("./bootstrap.php");
+include("../app/bootstrap.php");
 
 function errorAndExit(string $message, int $statusCode) {
     header("Status: $statusCode");
