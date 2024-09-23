@@ -1,37 +1,51 @@
 {
   "name": "lexide/lazy-boy",
-  "description": "A skeleton REST API application, using Silex and Syringe with support for Puzzle-DI",
+  "description": "A skeleton REST API application, using Slim and Syringe with support for Symfony Console, AWS Lambda and ApiGateway",
   "type": "composer-plugin",
   "license": "MIT",
   "homepage": "https://github.com/lexide/lazy-boy",
+  "authors": [
+    {
+      "name": "Danny Smart",
+      "email": "downsider84@hotmail.com"
+    }
+  ],
   "require": {
-    "php": ">=7.3.0",
-    "silex/silex": "^2.0",
+    "php": ">=8.0.0",
+    "slim/slim": "^4.0.0",
+    "guzzlehttp/psr7": "^2.7.0",
     "lexide/syringe": "~2.2.0",
-    "composer-plugin-api": "^1.0 || ^2.0"
+    "lexide/pro-forma": "~1.0.0",
+    "psr/log": "^3.0.0"
   },
   "require-dev": {
-    "composer/composer": "2.0.*@dev",
     "phpunit/phpunit": "^9.0.0",
-    "mockery/mockery": "^1.4.0",
-    "mikey179/vfsstream": "^1.4.0"
-  },
-  "suggest": {
-    "symfony/console": "Run CLI commands",
-    "lexide/puzzle-di": "Allow installed modules to set up dependency injection for their components"
+    "mockery/mockery": "^1.6.0",
+    "symfony/console": "^7.0.0"
   },
   "autoload": {
     "psr-4": {
-      "Lexide\\LazyBoy\\": "src",
+      "Lexide\\LazyBoy\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
       "Lexide\\LazyBoy\\Test\\": "test"
     }
   },
   "extra": {
-    "class": "Lexide\\LazyBoy\\Controller\\ScriptController"
+    "lexide/puzzle-di": {
+      "files": {
+        "lexide/pro-forma": {
+          "class": "Lexide\\LazyBoy\\ProForma\\TemplateProvider"
+        }
+      }
+    }
   },
-  "scripts": {
-    "install-lazy-boy": [
-      "Lexide\\LazyBoy\\Controller\\ScriptController::install"
-    ]
+  "config": {
+    "allow-plugins": {
+      "lexide/puzzle-di": false,
+      "lexide/pro-forma": false
+    }
   }
 }
