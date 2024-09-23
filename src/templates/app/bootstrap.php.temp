@@ -1,33 +1,86 @@
 <?php
 
-$appDir = dirname(__DIR__);
-
-include_once($appDir . "/vendor/autoload.php");
-
-use Lexide\Syringe\ReferenceResolver;
 use Lexide\Syringe\ContainerBuilder;
-use Lexide\Syringe\Loader\JsonLoader;
 use Lexide\Syringe\Loader\YamlLoader;
+use Lexide\Syringe\ReferenceResolver;
+use Lexide\Syringe\Exception\ConfigException;
+use Lexide\Syringe\Exception\ReferenceException;
+use Lexide\Syringe\Exception\LoaderException;
+use Pimple\Container;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 {{puzzleConfigUseStatement}}
 
-$resolver = new ReferenceResolver();
-$loaders = [
-    new JsonLoader(),
-    new YamlLoader()
-];
+/**
+ * @throws ConfigException
+ * @throws ReferenceException
+ * @throws LoaderException
+ */
+function buildContainer(): Container {
 
-$configPaths = [
-    $appDir . "/app/config",
-    $appDir
-];
+    $appDir = dirname(__DIR__);
 
-$builder = new ContainerBuilder($resolver, $configPaths);
+    $resolver = new ReferenceResolver();
+    $loaders = [
+        new JsonLoader(),
+        new YamlLoader()
+    ];
 
-foreach ($loaders as $loader) {
-    $builder->addLoader($loader);
-}
-$builder->setApplicationRootDirectory($appDir);
+    $configPaths = [];
+    foreach (explode(":", get_include_path()) as $directory) {
+        if (is_dir($directory)) {
+            $configPaths[] = $directory;
+        }
+    }
 
+    if (($environment = getenv("ENVIRONMENT")) === false) {
+        $environment = "local";
+    }
+
+    // add include paths as syringe config paths
+    $configPaths = array_merge(
+        [
+{{ lambdaEnvConfigDir }}
+            "$appDir/config",
+            $appDir,
+        ],
+        $configPaths
+    );
+
+    $builder = new ContainerBuilder($resolver, $configPaths);
+
+    foreach ($loaders as $loader) {
+        $builder->addLoader($loader);
+    }
+    $builder->setApplicationRootDirectory($appDir);
 {{puzzleConfigLoadFiles}}
+    $envConfig = [
+        // add your env config files here
+        // "env_namespace" => "file/path.yml"
+    ];
+    $builder->addConfigFiles($envConfig);
+    $builder->addConfigFile("services.yml");
+    $builder->addConfigFile("environment.yml");
 
-$builder->addConfigFile("services.yml");
+    return $builder->createContainer();
+}
+
+/**
+ * @param Logger $logger
+ * @param Exception $e
+ */
+function logException(LoggerInterface $logger, \Exception $e): void
+{
+    $severity = 0;
+    $severityName = "Exception";
+
+    $logger->log(
+        LogLevel::ERROR,
+        "Exception: " . $e->getMessage(),
+        [
+            "exception" => $e,
+            "severity" => $severity,
+            "severityName" => $severityName
+        ]
+    );
+}

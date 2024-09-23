@@ -1,10 +1,23 @@
-routes:
+parameters:
+  api.routes: []
 
 # Example Syntax:
-#  url: ""
-#  method:""
-#  action: "controller.service:methodName"
-#  public: true (shorthand, or...)
-#  security:
-#     public: true
-#     roles: []
+#    routes:
+#      routeName:
+#        method: "GET"
+#        url: "/hello-world"
+#        public: true     # or
+#        security:
+#          # custom security parameters
+#        action:
+#          controller: "controllerName"
+#          method: "routeMethod"
+#    groups:
+#      groupName:
+#        url: "/users"
+#        security:
+#          # group level security parameters
+#        routes:
+#          # ...    # All route URLs in here are prepended with the group URL
+#        groups:
+#          # ...    # Nested groups

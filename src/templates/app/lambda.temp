@@ -1,0 +1,41 @@
+!/usr/bin/env php
+<?php
+
+use Lexide\LazyBoy\Lambda\InputBuilder;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Application;
+
+include("./bootstrap.php");
+
+try {
+    $container = buildContainer();
+} catch (Exception $e) {
+    echo "\n\n**** CRITICAL ERROR ****\n";
+    echo $e->getMessage() . "\n\n\n";
+    exit(1);
+}
+
+return function(array $event, $context) use ($container): void {
+
+    try {
+        $command = getenv("COMMAND") ?: "";
+        $args = getenv("ARGS") ?: "";
+        $options = getenv("OPTIONS") ?: "";
+
+        /** @var InputBuilder $inputBuilder */
+        $inputBuilder = $container["lambda.inputBuilder"];
+
+        /** @var Application $application */
+        $application = $container["console.application"];
+        $application->run($inputBuilder->buildInput($command, $args, $options, $event));
+
+    } catch (\Exception $e) {
+
+        /** @var LoggerInterface $exceptionLogger */
+        $exceptionLogger = $container["exceptionLogger"];
+        logException($exceptionLogger, $e);
+
+        throw $e;
+    }
+
+};

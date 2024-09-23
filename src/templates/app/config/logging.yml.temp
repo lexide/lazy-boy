@@ -1,0 +1,5 @@
+services:
+  # TODO: set or alias this service
+  exceptionLogger:
+    class: Psr\Log\LoggerInterface
+    stub: true

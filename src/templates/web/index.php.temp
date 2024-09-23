@@ -1,32 +1,40 @@
 <?php
 include_once("../app/bootstrap.php");
 
-use Lexide\LazyBoy\Controller\FrontController;
-use Silex\Provider\ServiceControllerServiceProvider;
-use Lexide\LazyBoy\Provider\CorsServiceProvider;
-use Lexide\LazyBoy\Provider\JsonPostServiceProvider;
-use Lexide\LazyBoy\Provider\JsonErrorProvider;
-{{puzzleConfigUseStatement}}
+use Lexide\LazyBoy\Config\RouteLoader;
+use Psr\Log\LoggerInterface;
+use Slim\App;
 
-/** @var Lexide\Syringe\ContainerBuilder $builder */
+include("./bootstrap.php");
 
-$appDir = realpath(__DIR__ . "/../");
-$configDir = "$appDir/app/config";
+function errorAndExit(string $message, int $statusCode) {
+    header("Status: $statusCode");
+    header("Content-Type: application/json");
+    echo json_encode(["error" => $message];
+    exit(1);
+}
 
-$frontController = new FrontController(
-    $builder,
-    [$configDir, $appDir],
-    "Silex\\Application",
-    [
-        new ServiceControllerServiceProvider(),
-        new CorsServiceProvider(),
-        new JsonPostServiceProvider(),
+try {
+    $container = buildContainer();
+} catch (Exception $e) {
+    errorAndExit("A critical error has occurred", 400);
+}
 
-        // If you're not using this endpoint as a JSON API, comment the line below
-        new JsonErrorProvider()
-    ]
-);
+try {
 
-{{puzzleConfigLoadFiles}}
+    /** @var App $application */
+    $application = $container["api.application"];
 
-$frontController->runApplication();
+    /** @var RouteLoader $routeLoader */
+    $routeLoader = $container["api.routeLoader"];
+    $routeLoader->setRoutes($application);
+
+    $application->run();
+
+} catch (Exception $e) {
+    /** @var LoggerInterface $exceptionLogger */
+    $exceptionLogger = $container["exceptionLogger"];
+    logException($exceptionLogger, $e);
+
+    errorAndExit("An error has occurred", $e->getCode() ?: 400);
+}

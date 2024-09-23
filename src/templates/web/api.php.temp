@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?php
+
+use Lexide\LazyBoy\ApiGateway\RequestFactory;
+use Lexide\LazyBoy\Config\RouteLoader;
+use Psr\Log\LoggerInterface;
+use Slim\App;
+
+include("./bootstrap.php");
+
+try {
+    $container = buildContainer();
+} catch (Exception $e) {
+    echo "\n\n**** CRITICAL ERROR ****\n";
+    echo $e->getMessage() . "\n\n\n";
+    exit(1);
+}
+
+
+
+return function(array $event, $context) use ($container): array {
+    try {
+        /** @var RequestFactory $requestFactory */
+        $requestFactory = $container["apiGateway.requestFactory"];
+        $request = $requestFactory->createFromEvent($event);
+
+        /** @var App $application */
+        $application = $container["api.application"];
+
+        /** @var RouteLoader $routeLoader */
+        $routeLoader = $container["api.routeLoader"];
+        $routeLoader->setRoutes($application);
+
+        // Run the application
+        $response = $application->handle($request);
+
+        // Process the response
+        $statusCode = $response->getStatusCode();
+        $body = $response->getBody()->getContents();
+        $headers = $response->getHeaders();
+        foreach ($headers as $header => $value) {
+            $headers[$header] = implode(",", $value);
+        }
+
+    } catch (\Exception $e) {
+        /** @var LoggerInterface $exceptionLogger */
+        $exceptionLogger = $container["exceptionLogger"];
+        logException($exceptionLogger, $e);
+
+        $statusCode = $e->getCode() ?: 400;
+        $body = json_encode([
+            "error" => "An unexpected error occurred"
+        ]);
+        $headers = ["Content-Type" => "application/json"];
+    }
+
+    return [
+        "statusCode" => $statusCode,
+        "body" => $body,
+        "headers" => $headers ?? []
+    ];
+};

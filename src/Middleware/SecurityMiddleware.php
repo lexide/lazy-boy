@@ -18,6 +18,11 @@ class SecurityMiddleware implements MiddlewareInterface
     protected ConfigContainer $securityContainer;
     protected AuthoriserInterface $authoriser;
 
+    /**
+     * @param ResponseFactory $responseFactory
+     * @param ConfigContainer $securityContainer
+     * @param AuthoriserInterface $authoriser
+     */
     public function __construct(
         ResponseFactory $responseFactory,
         ConfigContainer $securityContainer,
