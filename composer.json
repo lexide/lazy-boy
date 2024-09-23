@@ -1,7 +1,7 @@
 {
   "name": "lexide/lazy-boy",
   "description": "A skeleton REST API application, using Slim and Syringe with support for Symfony Console, AWS Lambda and ApiGateway",
-  "type": "composer-plugin",
+  "type": "library",
   "license": "MIT",
   "homepage": "https://github.com/lexide/lazy-boy",
   "authors": [
