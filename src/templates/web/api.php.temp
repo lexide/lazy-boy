@@ -16,8 +16,6 @@ try {
     exit(1);
 }
 
-
-
 return function(array $event, $context) use ($container): array {
     try {
         /** @var RequestFactory $requestFactory */

@@ -16,13 +16,15 @@ class TemplateProvider implements TemplateProviderInterface
     {
         $namespace = $projectConfig->getNamespace();
         $usingPuzzle = $projectConfig->hasInstalledPackage("lexide/puzzle-di");
+        $hasSymfonyConsole = $projectConfig->hasInstalledPackage("symfony/console");
         $templateDir = "src/templates";
 
         $apiGateway = !empty($libraryConfig->getValue("apiGateway"));
         $restApi = $libraryConfig->getValue("rest") ?? !$apiGateway;
         $useCors = $libraryConfig->getValue("useCors") ?? $restApi;
-        $lambda = !empty($libraryConfig->getValue("lambda"));
-        $console = !empty($libraryConfig->getValue("console"));
+        $lambda = $hasSymfonyConsole && !empty($libraryConfig->getValue("lambda"));
+        $console = $hasSymfonyConsole && !empty($libraryConfig->getValue("console"));
+        $consoleName = $libraryConfig->getValue("consoleName");
 
         $bootstrapReplacements = [
             "puzzleConfigUseStatement" => $usingPuzzle
@@ -34,20 +36,20 @@ class TemplateProvider implements TemplateProviderInterface
                 : "",
             "lambdaEnvVariable" => $apiGateway || $lambda
                 ? '    if (($environment = getenv("ENVIRONMENT")) === false) {' . "\n" .
-                  '        $environment = "local"' . "\n" .
+                  '        $environment = "local";' . "\n" .
                   '    }' . "\n"
                 : "",
             "lambdaEnvConfigDir" => $apiGateway || $lambda
-                ? "\n" . '"$appDir/environment/$environment",'
+                ? "\n" . '            "$appDir/environment/$environment",'
                 : ""
         ];
 
         $consoleReplacements = [
-            "consoleAppName" => $libraryConfig->getValue("consoleName") ?? $projectConfig->getName() ?: "Application",
+            "consoleAppName" => $consoleName ?? $projectConfig->getName() ?: "Application",
             "setAutoExit" => $lambda
-                ? "      - method: \"setAutoExit\"\n" .
-                  "        arguments:\n" .
-                  "          - false'\n\n"
+                ? '      - method: "setAutoExit"' . "\n" .
+                  '        arguments:' . "\n" .
+                  '          - false' . "\n"
                 : "",
             "lambdaInputBuilder" => $lambda
                 ? "  lambda.inputBuilder:\n" .
@@ -58,12 +60,12 @@ class TemplateProvider implements TemplateProviderInterface
         $apiReplacements = [
             "apiGatewayRequestFactory" => $apiGateway
                 ? "  apiGateway.requestFactory:\n" .
-                  "    class: LexisNexis\SelfDeclarations\Request\RequestFactory\n\n"
+                  "    class: LexisNexis\SelfDeclarations\Request\RequestFactory\n"
                 : "",
             "addCorsMiddleware" => $useCors
                 ? '      - method: "add"' . "\n" .
                   '        arguments:' . "\n" .
-                  '          - "@api.cors.middleware"' . "\n\n"
+                  '          - "@api.cors.middleware"' . "\n"
                 : ""
         ];
 
