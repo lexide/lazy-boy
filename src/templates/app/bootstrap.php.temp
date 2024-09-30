@@ -22,7 +22,6 @@ function buildContainer(): Container {
 
     $resolver = new ReferenceResolver();
     $loaders = [
-        new JsonLoader(),
         new YamlLoader()
     ];
 
@@ -32,15 +31,10 @@ function buildContainer(): Container {
             $configPaths[] = $directory;
         }
     }
-
-    if (($environment = getenv("ENVIRONMENT")) === false) {
-        $environment = "local";
-    }
-
+{{ lambdaEnvVariable }}
     // add include paths as syringe config paths
     $configPaths = array_merge(
-        [
-{{ lambdaEnvConfigDir }}
+        [{{ lambdaEnvConfigDir }}
             "$appDir/config",
             $appDir,
         ],
@@ -66,7 +60,7 @@ function buildContainer(): Container {
 }
 
 /**
- * @param Logger $logger
+ * @param LoggerInterface $logger
  * @param Exception $e
  */
 function logException(LoggerInterface $logger, \Exception $e): void

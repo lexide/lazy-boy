@@ -1,3 +1,2 @@
 imports:
-{{ apiImport }}{{ consoleImport }}
-  - "logging.yml"
+{{ apiImport }}{{ consoleImport }}  - "logging.yml"

@@ -16,6 +16,7 @@ class TemplateProvider implements TemplateProviderInterface
     {
         $namespace = $projectConfig->getNamespace();
         $usingPuzzle = $projectConfig->hasInstalledPackage("lexide/puzzle-di");
+        $templateDir = "src/templates";
 
         $apiGateway = !empty($libraryConfig->getValue("apiGateway"));
         $restApi = $libraryConfig->getValue("rest") ?? !$apiGateway;
@@ -31,8 +32,13 @@ class TemplateProvider implements TemplateProviderInterface
                 ? '    $puzzleConfigs = PuzzleConfig::getConfigItems("lexide/syringe");' . "\n" .
                   '    $builder->addConfigFiles($puzzleConfigs);' . "\n"
                 : "",
+            "lambdaEnvVariable" => $apiGateway || $lambda
+                ? '    if (($environment = getenv("ENVIRONMENT")) === false) {' . "\n" .
+                  '        $environment = "local"' . "\n" .
+                  '    }' . "\n"
+                : "",
             "lambdaEnvConfigDir" => $apiGateway || $lambda
-                ? '"$appDir/environment/$environment",'
+                ? "\n" . '"$appDir/environment/$environment",'
                 : ""
         ];
 
@@ -45,7 +51,7 @@ class TemplateProvider implements TemplateProviderInterface
                 : "",
             "lambdaInputBuilder" => $lambda
                 ? "  lambda.inputBuilder:\n" .
-                "    class: Lexide\LazyBoy\Lambda\InputBuilder\n"
+                  "    class: Lexide\LazyBoy\Lambda\InputBuilder\n"
                 : ""
         ];
 
@@ -63,23 +69,28 @@ class TemplateProvider implements TemplateProviderInterface
 
         $servicesReplacements = [
             "apiImport" => $restApi || $apiGateway
-                ? '  - "api.yml"' . "\n"
+                ? "  - \"api.yml\"\n"
                 : "",
             "consoleImport" => $console || $lambda
-                ? '  - "console.yml"' . "\n"
+                ? "  - \"console.yml\"\n"
                 : "",
         ];
 
         $templates = [
             TemplateFactory::create(
                 "servicesConfig",
-                "templates/app/config/services.yml.temp",
+                "$templateDir/app/config/services.yml.temp",
                 "app/config/services.yml",
                 $servicesReplacements
             ),
             TemplateFactory::create(
+                "loggingConfig",
+                "$templateDir/app/config/logging.yml.temp",
+                "app/config/logging.yml"
+            ),
+            TemplateFactory::create(
                 "bootstrap",
-                "templates/app/bootstrap.php.temp",
+                "$templateDir/app/bootstrap.php.temp",
                 "app/bootstrap.php",
                 $bootstrapReplacements
             )
@@ -87,24 +98,24 @@ class TemplateProvider implements TemplateProviderInterface
         if ($restApi || $apiGateway) {
             $templates[] = TemplateFactory::create(
                 "apiConfig",
-                "templates/app/config/api.yml.temp",
+                "$templateDir/app/config/api.yml.temp",
                 "app/config/api.yml",
                 $apiReplacements
             );
             $templates[] = TemplateFactory::create(
                 "routesConfig",
-                "templates/app/config/routes.yml.temp",
+                "$templateDir/app/config/routes.yml.temp",
                 "app/config/routes.yml"
             );
             $templates[] = $restApi
                 ? TemplateFactory::create(
                     "index",
-                    "templates/web/index.php.temp",
+                    "$templateDir/web/index.php.temp",
                     "web/index.php"
                 )
                 : TemplateFactory::create(
                     "api",
-                    "templates/web/api.php.temp",
+                    "$templateDir/web/api.php.temp",
                     "web/api.php"
                 );
         }
@@ -112,19 +123,19 @@ class TemplateProvider implements TemplateProviderInterface
         if ($console || $lambda) {
             $templates[] = TemplateFactory::create(
                 "consoleConfig",
-                "templates/app/config/console.yml.temp",
+                "$templateDir/app/config/console.yml.temp",
                 "app/config/console.yml",
                 $consoleReplacements
             );
             $templates[] = $console
                 ? TemplateFactory::create(
                     "console",
-                    "templates/app/console.temp",
+                    "$templateDir/app/console.temp",
                     "app/console"
                 )
                 : TemplateFactory::create(
                     "lambda",
-                    "templates/app/lambda.temp",
+                    "$templateDir/app/lambda.temp",
                     "app/lambda"
                 );
         }

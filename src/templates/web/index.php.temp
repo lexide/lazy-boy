@@ -7,10 +7,10 @@ use Slim\App;
 
 include("../app/bootstrap.php");
 
-function errorAndExit(string $message, int $statusCode) {
+function errorAndExit(string $message, int $statusCode): void {
     header("Status: $statusCode");
     header("Content-Type: application/json");
-    echo json_encode(["error" => $message];
+    echo json_encode(["error" => $message]);
     exit(1);
 }
 
