@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e36be1592048656cf016688ec18bfaf7",
+    "content-hash": "fcc24fc0dae0ddcb1e1b7d48951212ec",
     "packages": [
         {
             "name": "guzzlehttp/psr7",
@@ -124,21 +124,21 @@
         },
         {
             "name": "lexide/pro-forma",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lexide/pro-forma.git",
-                "reference": "cf06035d03a5614953cc6d2b8b0ee7e61d8d8333"
+                "reference": "43f644b7da871606621d7a996a973f10c1875516"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lexide/pro-forma/zipball/cf06035d03a5614953cc6d2b8b0ee7e61d8d8333",
-                "reference": "cf06035d03a5614953cc6d2b8b0ee7e61d8d8333",
+                "url": "https://api.github.com/repos/lexide/pro-forma/zipball/43f644b7da871606621d7a996a973f10c1875516",
+                "reference": "43f644b7da871606621d7a996a973f10c1875516",
                 "shasum": ""
             },
             "require": {
                 "composer-plugin-api": "^2.0",
-                "lexide/puzzle-di": "~3.0.0",
+                "lexide/puzzle-di": "~3.0.2",
                 "php": ">=8.0"
             },
             "require-dev": {
@@ -169,22 +169,22 @@
             "description": "A library for managing and installing templated files for auto-generated code",
             "support": {
                 "issues": "https://github.com/lexide/pro-forma/issues",
-                "source": "https://github.com/lexide/pro-forma/tree/1.0.0"
+                "source": "https://github.com/lexide/pro-forma/tree/1.1.0"
             },
-            "time": "2024-09-19T15:27:35+00:00"
+            "time": "2024-10-01T11:17:37+00:00"
         },
         {
             "name": "lexide/puzzle-di",
-            "version": "3.0.1",
+            "version": "3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lexide/puzzle-di.git",
-                "reference": "1776c00b814969feb378e3ca81a934d5d9085bd7"
+                "reference": "689f951dd1ea9025abb80a60ec76ea93aa58d0bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lexide/puzzle-di/zipball/1776c00b814969feb378e3ca81a934d5d9085bd7",
-                "reference": "1776c00b814969feb378e3ca81a934d5d9085bd7",
+                "url": "https://api.github.com/repos/lexide/puzzle-di/zipball/689f951dd1ea9025abb80a60ec76ea93aa58d0bc",
+                "reference": "689f951dd1ea9025abb80a60ec76ea93aa58d0bc",
                 "shasum": ""
             },
             "require": {
@@ -214,9 +214,9 @@
             "homepage": "https://github.com/lexide/puzzle-di",
             "support": {
                 "issues": "https://github.com/lexide/puzzle-di/issues",
-                "source": "https://github.com/lexide/puzzle-di/tree/3.0.1"
+                "source": "https://github.com/lexide/puzzle-di/tree/3.0.2"
             },
-            "time": "2024-09-18T13:09:17+00:00"
+            "time": "2024-10-01T09:13:56+00:00"
         },
         {
             "name": "lexide/syringe",
@@ -1274,16 +1274,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.2.0",
+            "version": "v5.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "23c79fbbfb725fb92af9bcf41065c8e9a0d49ddb"
+                "reference": "3abf7425cd284141dc5d8d14a9ee444de3345d1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/23c79fbbfb725fb92af9bcf41065c8e9a0d49ddb",
-                "reference": "23c79fbbfb725fb92af9bcf41065c8e9a0d49ddb",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/3abf7425cd284141dc5d8d14a9ee444de3345d1a",
+                "reference": "3abf7425cd284141dc5d8d14a9ee444de3345d1a",
                 "shasum": ""
             },
             "require": {
@@ -1326,9 +1326,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.2.0"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.3.0"
             },
-            "time": "2024-09-15T16:40:33+00:00"
+            "time": "2024-09-29T13:56:26+00:00"
         },
         {
             "name": "phar-io/manifest",

@@ -15,7 +15,7 @@
     "slim/slim": "^4.0.0",
     "guzzlehttp/psr7": "^2.7.0",
     "lexide/syringe": "~2.2.0",
-    "lexide/pro-forma": "~1.0.0",
+    "lexide/pro-forma": "~1.1.0",
     "psr/log": "^3.0.0"
   },
   "require-dev": {
