@@ -9,11 +9,19 @@ use Lexide\ProForma\Template\TemplateProviderInterface;
 
 class TemplateProvider implements TemplateProviderInterface
 {
+
+    protected static array $messages = [];
+
     /**
      * {@inheritDoc}
      */
     public static function getTemplates(ProjectConfig $projectConfig, LibraryConfig $libraryConfig): array
     {
+        // if templating is disabled, return now
+        if (!empty($libraryConfig->getValue("preventTemplating"))) {
+            return [];
+        }
+
         $namespace = $projectConfig->getNamespace();
         $usingPuzzle = $projectConfig->hasInstalledPackage("lexide/puzzle-di");
         $hasSymfonyConsole = $projectConfig->hasInstalledPackage("symfony/console");
@@ -22,9 +30,17 @@ class TemplateProvider implements TemplateProviderInterface
         $apiGateway = !empty($libraryConfig->getValue("apiGateway"));
         $restApi = $libraryConfig->getValue("rest") ?? !$apiGateway;
         $useCors = $libraryConfig->getValue("useCors") ?? $restApi;
-        $lambda = $hasSymfonyConsole && !empty($libraryConfig->getValue("lambda"));
-        $console = $hasSymfonyConsole && !empty($libraryConfig->getValue("console"));
+        $lambda = !empty($libraryConfig->getValue("lambda"));
+        $console = !empty($libraryConfig->getValue("console"));
         $consoleName = $libraryConfig->getValue("consoleName");
+
+        if (($lambda || $console) && !$hasSymfonyConsole) {
+            $lambda = false;
+            $console = false;
+            self::$messages[] = "A console and/or lambda application was requested, but symfony/console is not installed. " .
+                "You will need to install it in order for LazyBoy to generate code for console applications. " .
+                "Please remember to delete services.yml and bootstrap.php so that they can be regenerated as well.";
+        }
 
         $bootstrapReplacements = [
             "puzzleConfigUseStatement" => $usingPuzzle
@@ -143,6 +159,14 @@ class TemplateProvider implements TemplateProviderInterface
         }
 
         return $templates;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public static function getMessages(): array
+    {
+        return self::$messages;
     }
 
 }
