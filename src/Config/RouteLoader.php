@@ -38,7 +38,17 @@ class RouteLoader
         $this->controllers = $controllers;
         $this->securityContainer = $securityContainer;
         $this->routes = $routes;
-        $this->allowedMethods = array_flip($allowedMethods ?? self::DEFAULT_ALLOWED_METHODS);
+        $this->setAllowedMethods($allowedMethods ?? self::DEFAULT_ALLOWED_METHODS);
+    }
+
+    /**
+     * @param array $allowedMethods
+     */
+    protected function setAllowedMethods(array $allowedMethods): void
+    {
+        $this->allowedMethods = array_flip(
+            array_map(fn($method) => strtoupper($method), $allowedMethods)
+        );
     }
 
     /**
