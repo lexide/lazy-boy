@@ -64,13 +64,17 @@ class RouteLoader
      * @param App $app
      * @param array $config
      * @param array $securityConfig
+     * @param string $urlPrefix
      * @throws RouteException
      */
-    protected function applyRoutes(App $app, array $config, array $securityConfig = []): void
+    protected function applyRoutes(App $app, array $config, array $securityConfig = [], string $urlPrefix = ""): void
     {
         foreach ($config["routes"] ?? [] as $name => $route) {
             if (empty($route["url"])) {
-                throw new RouteException("Route config for '$name' does not contain a URL");
+                if (empty($urlPrefix)) {
+                    throw new RouteException("Route config for '$name' does not contain a URL");
+                }
+                $route["url"] = "";
             }
 
             $method = strtoupper($route["method"] ?? "" ?: "GET");
@@ -117,8 +121,10 @@ class RouteLoader
             }
 
             $groupSecurity = array_replace($securityConfig, $group["security"] ?? []);
-            $app->group($group["url"] ?? "", function(App $app) use ($group, $groupSecurity) {
-                $this->applyRoutes($app, $group, $groupSecurity);
+            $groupUrl = $group["url"] ?? "";
+            $newPrefix = $urlPrefix . $groupUrl;
+            $app->group($groupUrl, function(App $app) use ($group, $groupSecurity, $newPrefix) {
+                $this->applyRoutes($app, $group, $groupSecurity, $newPrefix);
             });
         }
     }
