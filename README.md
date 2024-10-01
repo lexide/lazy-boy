@@ -1,91 +1,156 @@
-# lazy-boy
-A skeleton REST API application, using [Silex] and [Syringe] with support for [Puzzle-DI]
+# LazyBoy
+A skeleton REST API application, using [Slim], [Syringe] and [Puzzle-DI]
 
 ## Summary
-Lazy Boy will create a skeleton [Silex] framework, so you can create REST APIs without having to bother with 
-boilerplate code.
+LazyBoy will create a skeleton [Slim] framework, using [ProForma] to generate files, so you can create REST APIs without
+having to bother with boilerplate code.
 
 It is packaged with a route loader and uses [Syringe], which allows you to define both your routes and services in 
 configuration files, rather than PHP
 
-If you have the [Symfony console] installed, it will also create a console script and automatically load any commands it
-finds in the service container (any service name which ends with ".command" and is an instance of the Symfony Command 
-class). You can also use [Puzzle-DI] to load service configuration from modules.
+If you have the [Symfony console] installed, it will also create a console script including and command services that
+have been defined in [Syringe] DI config. You can also use [Puzzle-DI] to load service configuration from modules.
 
 ## Requirements
 
-* [Silex] 2.0+
+* PHP 8.0+
+* [Slim] 4.0+
+* [Syringe] 2.2+
 
 ## Installation
 install using composer:
 
-    composer require Lexide/lazy-boy:^2.0
+    composer require lexide/lazy-boy:~4.0.0
 
-Lazy Boy will automatically generate several files from templates, whenever `composer update` or `composer install` is run.
-You are free to make modifications; Lazy Boy will not overwrite a file which already exists, so committing those changes 
-to a VCS is safe. Having your VCS ignore the files will mean they are generated when you install vendors on a freshly 
-cloned repository.
+LazyBoy will automatically generate several files from templates, whenever `composer update` or `composer install` is run.
+You are free to make modifications to the generated output; LazyBoy will not overwrite a file which already exists, so 
+committing those changes to a VCS is safe and recommended. Having your VCS ignore the files will mean they are generated
+when you install vendors on a freshly cloned repository, however it means that you will always get the very latest 
+version of the templates.
 
-If you want to disable automatic file generation, so you can use the FrontController or RouteLoader perhaps, add the 
-following to your composer file:
+If you want to disable automatic file generation, so you can use LazyBoy classes on their own, add the following to your 
+composer file:
 
 ```json
-"extra": {
-  "lexide/lazy-boy": {
-    "prevent-install": true
+{
+  "extra": {
+    "lexide/pro-forma": {
+      "config": {
+        "lexide/lazy-boy": {
+          "preventTemplating": true
+        }
+      }
+    }
   }
 }
 ```
 
 All that is left to do is create a vhost or otherwise point requests to `web/index.php`.
- 
+
+## Code Generation
+
+### Application types
+
+By default, LazyBoy will create files required for a standard REST application. It also supports adding console scripts, 
+as a straight Symfony Console app or integrated for AWS Lambda. In addition, you can replace the default REST application
+with one for AWS ApiGateway.
+
+The application type is configured with ProForma config:
+
+```json
+{
+  "extra": {
+    "lexide/pro-forma": {
+      "config": {
+        "lexide/lazy-boy": {
+          "rest": false,
+          "apiGateway": true,
+          "lambda": true
+        }
+      }
+    }
+  }
+}
+```
+
+This example would create an ApiGateway application with Lambda support
+
+### Configuration
+
+The full list of ProForma config options is as follows:
+
+| Option              | Data Type | Description                              | Notes                                                  |
+|---------------------|-----------|------------------------------------------|--------------------------------------------------------|
+| rest                | bool      | Create a REST application                | Defaults to true                                       |
+| apiGateway          | bool      | Create an AWS ApiGateway application     | Mutually exclusive with "rest" which takes precedence  |
+| console             | bool      | Create a Symfony console application     | Requires symfony/console to be installed               |
+| lambda              | bool      | Create an AWS Lambda application         | Requires symfony/console to be installed               |
+| useCors             | bool      | Disable the LazyBoy Slim CORS middleware | Only applicable to "rest" applications                 |
+| consoleName         | string    | Set the name of the console application  | Only applicable to "console" and "lambda" applications |
+| preventTemplating   | bool      | Disable all code generation              |                                                        |
+
+### Templates
+
+LazyBoy creates files from the following templates, base on the application types that are configured in `composer.json`
+
+| Template Name   | Application Type | Output Location         |
+|-----------------|------------------|-------------------------|
+| bootstrap       | All              | app/bootstrap.php       |
+| apiConfig       | REST, ApiGateway | app/config/api.yml      |
+| consoleConfig * | Console, Lambda  | app/config/console.yml  |
+| loggingConfig   | All              | app/config/logging.yml  |
+| routes          | REST, ApiGateway | app/config/routes.yml   |
+| serviceConfig   | All              | app/config/services.yml |
+| console *       | Console          | app/console             |
+| lambda *        | Lambda           | app/lambda              |
+| api             | ApiGateway       | web/api.php             |
+| index           | REST             | web/index.php           |
+
+\* *This template depends on the `symfony/console` library being present in the package list*
+
 ## Routing
 
 ### Routes
 
-If you are using the standard Lazy-Boy route loader, you can define your routes in configuration files, using YAML or
-JSON. Each route is defined as follows:
+If you are using the standard LazyBoy route loader, you can define your routes in YAML configuration files. Each route 
+is defined as follows:
 
 ```yaml
 routes:
     route-name:
-        url: /sub/directory
-        action: "test_controller:doSomething"
-        method: post
+        url: "/sub/directory"
+        method: "post"
+        action: 
+          controller: "test_controller"
+          method: "doSomething"
+        public: true     # or
+        security:
+          # custom security parameters
+  
 ```
 
 `routes` is an associative array of routes that you want to allow access to.
 
 In this case, a HTTP request that was `POST`ed to `/sub/directory`, would access a service in the container called
-`test-controller` and call it's method `doSomething`. This route could be referenced as `route-name` when using the 
+`test-controller` and call its method `doSomething`. This route can be referenced as `route-name` when using the 
 router.
 
 For each route, the `url` and `action` parameters are required, but `method` is optional and defaults to `GET`.
 
-You can also use the `assert` parameter to overwrite the default regex for parameter of a route. For example
+Route URLs are processed by Slim, so you can add parameters and assertions 
+[as you normally would](https://www.slimframework.com/docs/v4/objects/routing.html#route-placeholders) for that framework 
 
 ```yaml
     routes:
         route-one:
-            url: /user/{id}
-            action: "test_controller:doSomething"
-            method: get
+            url: "/user/{id:[0-9+]}"
+            action:
+              controller: "test_controller"
+              method: "doSomething"
 ```
 
-The URL `/user/56` would match and the `id` parameter would come back as `56`.
-The URL `/user/56/foo` would not match.
-```yaml
-    routes:
-        route-two:
-            url: /user/{my_wildcard}
-            action: "test_controller:doSomethingElse
-            method: get
-            assert:
-                my_wildcard: ".*"
-```
-
-Going to the URL `/user/56` would match and again, the `my_wildcard` parameter would come back as `56`.
-Going the the URL `/user/56/foo` would match and the `my_wildcard` parameter would return `56/foo`
+The URL `/user/56` would match and the `id` parameter would be set to `56`.
+The URL `/user/56/foo` or `/user/foo` would not match.
 
 ### Groups
 
@@ -101,82 +166,70 @@ you can use a group to wrap them with a common url prefix.
 ```yaml
 groups:
     users:
-        urlPrefix: /users
+        url: "/users"
         routes:
             user-list:
-                url: /
-                action: "..."
+                # Omitting a route URL leaves the effective URL for this route as "/users" 
+                # ...
             get-user:
-                url: /{id}
-                action: "..."
+                url: "/{id}"
+                # ...
             user-login:
-                url: /login
-                action: "..."
+                url: "/login"
                 method: post
+                # ...
             user-logout:
-                url: /logout
-                action "..."
+                url: "/logout"
+                # ...
 ```
 
 ### Imports
 
-if you have a lot of routes, it can be convenient to separate related routes into different files. In this case, you can
-import files into a parent file by using the `imports` array:
+If you have a large API, it can be unwieldy to have all routes in the same file. Luckily, because LazyBoy uses syringe 
+for route config, we can use imports to allow the routes file to be split up 
 
 ```yaml
 imports:
-    - users.yml
-    - shop/products.yml
-    - shop/checkout.yml
-
-groups:
-    group: "..."
-routes:
-    route: "..."
+  - "usersRoutes.yml"
+  - "adminRoutes.yml"
+  # ...
+  
+parameters:
+  routes:
+    otherRoutesAsNormal:
+      # ...
 ```
 
-Imported files are merged into a single configuration array before routes and groups are processed. Where route naming 
-conflicts arise, the latter import will overwrite the former and the importing file will take precedence over any 
-imported routes.
-
-### Library Installed Routes
-
-If Puzzle-DI is installed, libraries that have registered route files with Lazy Boy can have those files imported into
-the RouteLoader. Using this feature, libraries can autoload routes and their controllers directly into Silex, without
-needing for an application to be configured manually.
-
-The functionality is similar to how Syringe works with Puzzle-DI, so if you are familiar with Syringe, it should be easy 
-to add library routes.
- 
-To register a route file from within a library, add the following code to the libraries composer.json file:
-
-```json
-"extra": {
-  "lexide/puzzle-di": {
-    "lexide/lazy-boy": [
-      "path": "[ path to the route file, relative to the library package root directory ]"
-    ]
-  }
-}
+```yaml
+# usersRoutes.yml
+parameters:
+  routes:
+    userRoute:
+      # ...
 ```
 
-Also, you will need to whitelist our library for use with puzzle-di by adding the following to the application's 
-composer.json:
+Syringe combines imported files using `array_replace_recursive()` so the only caveat to note is that you **MUST** use
+route names that are unique across all the route files. If not, the routes will get merged with unpredictable results.
 
-```json
-"extra": {
-  "lexide/puzzle-di": {
-    "whitelist": {
-      "lexide/lazy-boy": [
-        "[ your library's package name ]"
-      ]
-    }
-  }
-}
-```
+### Controllers
 
-Now, when composer installs dependencies into the application, the library's route file will be configured to load 
-alongside any application routes.
+A route must define a controller through which a matching request can be processed. These are PHP classes that include
+methods that will return a `Psr\Http\Message\ResponseInterface` when called.
+
+Controller methods can be passed the Request, the initial Response object (for when middleware needs to add to a 
+response) and any named parameters that slim parsed from the route URL. These values are assigned to method arguments 
+that match the following criteria:
+
+| Argument  | Criteria                                                                                  |
+|-----------|-------------------------------------------------------------------------------------------|
+| Request   | Has the name `$request` or has the type `Psr\Http\Message\RequestInterface`               |
+| Response  | Has the name `$response` or has the type `Psr\Http\Message\ResponseInterface`             |
+| Parameter | Named for the URL parameter in question e.g. `$id` would match from the URL `/user/{id}`* | 
+
+\* *Parameter types are not checked by LazyBoy; it is your responsibility to ensure the correct type is assigned*
+
+LazyBoy provides a `ResponseFactory` service which can be used as a convenient method of creating common response types, 
+such as error responses, JSON responses, no content responses, etc...
 
 ### Configuration
 
@@ -195,136 +248,108 @@ parameters:
         # PUT and PATCH methods are now disabled (not present in the list)
 ```
 
-Allowed method values are case insensitive
+Allowed method values are case-insensitive.
 
-## Providers
+## API Middleware
 
-### CORS Provider
+### CORS Middleware
 
-The CORS provider can be used to give your API the ability to accept cross domain requests. It is enabled by default and 
-can be configured by adding the following parameters to your app's syringe config:
-
-#### Allowed Headers
+The LazyBoy CORS middleware can be used to give your API the ability to accept cross domain requests. It is enabled by 
+default and can be configured by changing the following parameters to your app's syringe config:
 
 ```yaml
 parameters:
-    cors.request.defaultHeaders:
-# optional, automatically set to:
-#     ["Content-Type", "Authorization"]
-    cors.request.headers:
-      - "X-CUSTOM-REQUEST_HEADER"
-    cors.response.headers:
-      - "X-CUSTOM-RESPONSE-HEADER"
+  api.cors.allowedMethods: [] # List of allowed methods (defaults to the same methods as the router allows)
+  api.cors.allowedOrigins: [] # List of allowed origin domains
+  api.cors.allowedHeaders: [] # List of allowed headers
 ```
 
-These parameters allow for additional headers to be sent and received by the client. `cors.request.defaultHeaders` 
-contains the headers commonly required by Lazy-Boy apps, but can be overwritten if these headers need to be removed. The 
-headers and defaultHeaders are merged together, so you only need to set these configuration options if you need to use
-additional headers or to restrict headers.
+For allowed Origins and Headers, an empty list will insert `"*"` as the value in the CORS response headers. This is a
+fallback and not recommended for general use; if you're using CORS it should be configured only for the origins and 
+headers that you need.
 
-#### Allowed Methods
+To disable the middleware, set "useCors" to false in ProForma config when generating code files, or remove the middleware 
+from the Slim application in DI config.
 
-```yaml
-parameters:
-    # defaults to the value of router.allowedMethods
-    cors.allowedMethods:
-        - "get" 
-        - "post"
-        - "put"
-```
+### Security Middleware
 
-The `allowedMethods` parameters set which HTTP methods can be used with your API. You can use these to use a more 
-restricted list than the RouteLoader allows. In the above example, CORS requests will only be allowed for `GET`, `POST` 
-and `PUT` methods, so cross origin sources cannot make a request to `DELETE`. 
+LazyBoy has a security system that aims to prevent access to a non-public route unless specific conditions are met.
+LazyBoy itself only provides the ability to implement security controls; it makes no assumptions about what level of 
+security you want or what services or data you use to provide it.
 
-The `OPTIONS` method is required for CORS to work, so is always added automatically; it is not required for it to be in 
-the configuration list
+The system uses a series of Authorisers to run checks on a request to see if it should be allowed to continue. Each 
+Authoriser implements the `AuthoriserInterface` and will be passed the request and the security context for a route.
+To implement an Authoriser, you should create a class implementing this interface and add the logic you require to 
+validate a request. For example:
 
-Also, it should be obvious, but is worth noting that any allowed CORS methods that aren't in the `router.allowedMethods` 
-configuration list will not work as the `RouteLoader` will reject them
-
-## Custom Templates
-
-Lazy Boy uses a simple template system to create standard config and entry point files. It is possible to hook into this
-system to extend Lazy Boy and install custom templates.
-
-The extending library should be installed in the same manner as Lazy Boy; required into an application as a composer 
-dependency. The library itself should require Lazy Boy as normal, but then add extra data to the composer.json file to 
-configure the templates:
-
-```json
+```php
+class RoleAuthoriser implements AuthoriserInterface
 {
-  "name": "lexide/lazy-boy-extension",
-  "require": {
-    "lazy-boy": "^2.0.0"
-  },
-  "extra": {
-    "lexide/lazy-boy": {
-      "templates": {
-        "template-name": {
-          "template": "[ file path of the template, relative to the library package root directory]",
-          "output": "[ file path of the output file, relative to the application root directory ]"
-        },
-        "index": {
-          "template": "[ the 'index' template already exists. You can override a template like this ... ]"
-        },
-        "console": {
-          "output": "[ ... or change where it's written to by overriding the output ]"
-        }
-      }
+
+    protected $userDao;
+
+    public function __construct(UserDao $userDao)
+    {
+        $this->userDao = $userDao;
     }
-  }
+
+    public function checkAuthorisation(RequestInterface $request, array $securityContext): bool
+    {
+        $userId = $request->getAttribute("userId");
+        $user = $this->usersDao->getUser($userId);
+        return $user->getRole() == $securityContext["role"];
+    }
+
 }
-``` 
+```
 
-As in the example config, you can replace an existing template with a custom one by using the same template name.
-You can choose to override the template and/or the output file location.
+This authoriser gets a users ID from the request* loads the user record from a data store and checks the users role 
+against the role that the route requires. If the two match then the check passes.
 
-Currently the following templates are predefined
+This is a convoluted example that wouldn't be used in a real system, but serves to show how authorisers can be created 
+and the types of things they should do. As a general rule, a single Authoriser should check a single thing, so that they
+are composable and reusable.
 
-| Template Name | Output Location         |
-|---------------|-------------------------|
-| bootstrap *   | app/bootstrap.php       |
-| services      | app/config/services.yml |
-| routes        | app/config/routes.yml   |
-| console **    | app/console.php         |
-| index         | web/index.php           |
-| htaccess      | web/htaccess            |
+Authorisers can be combined by using an `AuthoriserContainer`. This is itself an Authoriser, but one that loops over a
+list of other Authorisers, checking the request against each one in turn. It has two modes, "requireAll" and "requireOne",
+which determines which of the Authorisers need to pass before returning its own result. "requireAll" is similar to a 
+logical AND operation, whereas "requireOne" is a logical OR
 
-\* *This template is protected and cannot be overridden*
+Using containers, Authorisers can be chained and combined in complex ways, allowing complete flexibility in applying
+your security requirements. LazyBoy sets up a default AuthoriserContainer, which you can use by adding the `api.authorisers`
+tag to your Authoriser service definition:
 
-** *This template depends on the `symfony/console` library being present in the package list*
+```yaml
+services:
+  myAuthoriser:
+    class: MyAuthoriser
+    tags:
+      - "api.authorisers"
+```
 
-### Usage In Applications
+Alternatively, you can use your own authoriser by replacing the `api.authoriser` service definition
 
-In order to prevent dependencies from installing templated files ad hoc, Lazy Boy requires that you whitelist the 
-package name in your application, before it will install any custom templates. This is done by adding the following code
-to the applications composer.json file
+## Logging
 
-```json
-"extra": {
-  "lexide/lazy-boy": {
-    "whiteListedPackages": [
-      "your/package-name"
-    ]
-  }
-}
-``` 
+LazyBoy provides a stub service to allow logging, found in the `logging.yml` DI config file. It is integrated into the 
+generated code using the PSR-3 `Psr\Log\LoggerInterface`, but you will need to set up your own logger in order for errors
+and other logs to be handled correctly
 
 ## Contributing
 
 If you have improvements you would like to see, open an issue in this github project or better yet, fork the project,
 implement your changes and create a pull request.
 
-The project uses [PSR-2] code styles and we insist that these are strictly adhered to. Also, please make sure that your
-code works with php 5.4, so things like generators, `finally`, `empty(someFunction())`, etc... should be avoided.
+The project uses [PSR-12] code styles and we insist that these are strictly adhered to. Also, please make sure that your
+code works with php 8.0.
 
-## Why "Lazy Boy"
+## Why "LazyBoy"?
 Because it likes REST, of course :)
 
 
-[Silex]: https://github.com/silexphp/silex
+[Slim]: https://github.com/slimphp/slim
 [Syringe]: https://github.com/Lexide/syringe
 [Puzzle-DI]: https://github.com/lexide/puzzle-di
+[ProForma]: https://github.com/lexide/pro-forma
 [Symfony console]: https://github.com/symfony/console
-[PSR-2]: https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md
+[PSR-12]: https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-12-extended-coding-style-guide.md
