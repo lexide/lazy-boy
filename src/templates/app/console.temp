@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+use Symfony\Component\Console\Application;
+
+include_once("bootstrap.php");
+
+try {
+    $container = buildContainer();
+} catch (Exception $e) {
+    echo "\n\n**** CRITICAL ERROR ****\n";
+    echo $e->getMessage() . "\n\n\n";
+    exit(1);
+}
+
+/** @var Application $application */
+$application = $container["console.application"];
+
+// Run the app
+$application->run();

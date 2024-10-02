@@ -2,214 +2,166 @@
 
 namespace Lexide\LazyBoy\Config;
 
-use Silex\Application;
-use Silex\Controller;
 use Lexide\LazyBoy\Exception\RouteException;
-use Lexide\LazyBoy\Security\SecurityContainer;
-use Lexide\Syringe\Exception\LoaderException;
-use Lexide\Syringe\Loader\LoaderInterface;
+use Lexide\LazyBoy\Security\ConfigContainer;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Slim\App;
 
-/**
- * Load routes into the application
- */
-class RouteLoader 
+class RouteLoader
 {
+    const DEFAULT_ALLOWED_METHODS = [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE"
+    ];
+
+    protected array $controllers;
+    protected ConfigContainer $securityContainer;
+    protected array $routes;
+    protected array $allowedMethods;
 
     /**
-     * @var array
-     */
-    protected $allowedMethods;
-
-    /**
-     * @var Application
-     */
-    protected $application;
-
-    /**
-     * @var LoaderInterface[]
-     */
-    protected $loaders = [];
-
-    /**
-     * @var SecurityContainer
-     */
-    protected $securityContainer = [];
-
-    /**
-     * @param Application $application
-     * @param SecurityContainer $securityContainer
-     * @param array $allowedMethods
-     * @param array $loaders
+     * @param array $controllers
+     * @param ConfigContainer $securityContainer
+     * @param array $routes
+     * @param ?array $allowedMethods
      */
     public function __construct(
-        Application $application,
-        SecurityContainer $securityContainer,
-        array $allowedMethods,
-        array $loaders = []
+        array $controllers,
+        ConfigContainer $securityContainer,
+        array $routes,
+        ?array $allowedMethods = null
     ) {
-        $this->application = $application;
+        $this->controllers = $controllers;
         $this->securityContainer = $securityContainer;
-        $this->setAllowedMethods($allowedMethods);
-
-        foreach ($loaders as $loader) {
-            if ($loader instanceof LoaderInterface) {
-                $this->addLoader($loader);
-            }
-        }
+        $this->routes = $routes;
+        $this->setAllowedMethods($allowedMethods ?? self::DEFAULT_ALLOWED_METHODS);
     }
 
     /**
      * @param array $allowedMethods
      */
-    protected function setAllowedMethods(array $allowedMethods)
+    protected function setAllowedMethods(array $allowedMethods): void
     {
-        $this->allowedMethods = array_flip( // flip so we can use isset()
-            array_map( // normalise values to uppercase
-                "strtoupper",
-                $allowedMethods
-            )
+        $this->allowedMethods = array_flip(
+            array_map(fn($method) => strtoupper($method), $allowedMethods)
         );
     }
 
     /**
-     * @param LoaderInterface $loader
-     */
-    public function addLoader(LoaderInterface $loader)
-    {
-        $this->loaders[] = $loader;
-    }
-
-    /**
-     * @param array|string $routes - route data or filePath to route data
-     * @param string $baseUrl - used to track the base URL within a group of routes. This argument should only be required for internal recursion
+     * @param App $app
      * @throws RouteException
      */
-    public function parseRoutes($routes, $baseUrl = "")
+    public function setRoutes(App $app): void
     {
-        // if we don't have a data array, see if we can load it from a file
-        if (!is_array($routes)) {
-            $routes = $this->loadFile($routes);
-        }
-
-        // process groups
-        if (!empty($routes["groups"])) {
-            if (!is_array($routes["groups"])) {
-                throw new RouteException("The group data array for '$baseUrl' is not in the correct format");
-            }
-
-            foreach ($routes["groups"] as $groupName => $config) {
-                if (empty($config["urlPrefix"])) {
-                    throw new RouteException("The group '$groupName' does not have a URL associated with it");
-                }
-                $this->parseRoutes($config, $baseUrl . $config["urlPrefix"]);
-            }
-
-        }
-
-        // validation
-        if (!empty($routes["routes"])) {
-            if (!is_array($routes["routes"])) {
-                throw new RouteException("The routes data array for '$baseUrl' is not in the correct format");
-            }
-
-            foreach ($routes["routes"] as $routeName => $config) {
-                // build the URL
-                $url = $baseUrl . (isset($config["url"])? $config["url"]: "");
-
-                // route validation
-                if (empty($url) || empty($config["action"])) {
-                    throw new RouteException("The data for the '$routeName' route is missing required elements");
-                }
-                if (empty($config["method"])) {
-                    $config["method"] = "GET";
-                } else {
-                    $config["method"] = strtoupper($config["method"]);
-                    // check method is allowed
-                    if (!isset($this->allowedMethods[$config["method"]])) {
-                        throw new RouteException("The method '{$config["method"]}' for route '$routeName' is not allowed");
-                    }
-                }
-                // add the route
-                /**
-                 * @var Controller $controller
-                 */
-                $controller = $this->application
-                    ->match($url, $config["action"])
-                    ->method($config["method"])
-                    ->bind($routeName);
-
-                if (isset($config["assert"]) && is_array($config["assert"])) {
-                    foreach ($config["assert"] as $variable => $regex) {
-                        $controller->assert($variable, $regex);
-                    }
-                }
-
-                // apply security if required
-                $security = null;
-                if (isset($config["public"])) {
-                    $security = ["public" => $config["public"]];
-                } elseif (!empty($config["security"])) {
-                    $security = $config["security"];
-                }
-                if ($security !== null) {
-                    $this->securityContainer->setSecurityForRoute($routeName, $security);
-                }
-            }
-        }
-
-        if (empty($routes["routes"]) && empty($routes["groups"])) {
-            throw new RouteException("No routes or groups were found for '$baseUrl'");
-        }
-
+        $this->applyRoutes($app, $this->routes);
     }
-
 
     /**
-     * @param $file
-     * @return LoaderInterface
-     * @throws \Exception||LoaderException
+     * @param App $app
+     * @param array $config
+     * @param array $securityConfig
+     * @param string $urlPrefix
+     * @throws RouteException
      */
-    protected function selectLoader($file)
+    protected function applyRoutes(App $app, array $config, array $securityConfig = [], string $urlPrefix = ""): void
     {
-        foreach ($this->loaders as $loader) {
-            /** @var LoaderInterface $loader */
-            if ($loader->supports($file)) {
-                return $loader;
+        foreach ($config["routes"] ?? [] as $name => $route) {
+            if (empty($route["url"])) {
+                if (empty($urlPrefix)) {
+                    throw new RouteException("Route config for '$name' does not contain a URL");
+                }
+                $route["url"] = "";
             }
+
+            $method = strtoupper($route["method"] ?? "" ?: "GET");
+            if (!isset($this->allowedMethods[$method])) {
+                throw new RouteException("The method '$method' for route '$name' is not allowed");
+            }
+
+            if (empty($route["action"])) {
+                throw new RouteException("Route config for '$name' does not contain an action");
+            }
+            $action = $route["action"];
+
+            if (empty($action["controller"]) || empty($action["method"])) {
+                throw new RouteException("Route action for '$name' does not contain both a controller name and method");
+            }
+            if (empty($this->controllers[$action["controller"]])) {
+                throw new RouteException("The controller '{$action["controller"]}' for route '$name' is not registered");
+            }
+            if (!method_exists($this->controllers[$action["controller"]], $action["method"])) {
+                throw new RouteException("The method '{$action["method"]}' does not exist on controller '{$action["controller"]}' for route '$name'");
+            }
+
+            $app->map(
+                [$method],
+                $route["url"],
+                $this->createRouteClosure($action["controller"], $action["method"])
+            )->setName($name);
+
+            $security = array_replace($securityConfig, $route["security"] ?? []);
+            $security["public"] ??= $route["public"] ?? true;
+
+            $this->securityContainer->setSecurityConfigForRoute($name, $security);
         }
-        throw new LoaderException(sprintf("The file '%s' is not supported by any of the available loaders", $file));
+
+        foreach ($config["groups"] ?? [] as $name => $group) {
+            if ((
+                    empty($group["routes"]) ||
+                    !is_array($group["routes"])
+                ) && (
+                    empty($group["groups"]) ||
+                    !is_array($group["groups"])
+                )) {
+                throw new RouteException("Group for '$name' does not contain any route config");
+            }
+
+            $groupSecurity = array_replace($securityConfig, $group["security"] ?? []);
+            $groupUrl = $group["url"] ?? "";
+            $newPrefix = $urlPrefix . $groupUrl;
+            $app->group($groupUrl, function(App $app) use ($group, $groupSecurity, $newPrefix) {
+                $this->applyRoutes($app, $group, $groupSecurity, $newPrefix);
+            });
+        }
     }
 
-    protected function loadFile($routes)
+    /**
+     * @param string $controllerName
+     * @param string $method
+     * @return \Closure
+     */
+    protected function createRouteClosure(string $controllerName, string $method): \Closure
     {
-        if (!is_string($routes)) {
-            throw new \InvalidArgumentException("The \$routes argument must be an array or a filePath");
-        }
-
-        $filePath = $routes;
-        // check $routes is a filePath
-        if (!file_exists($filePath)) {
-            throw new RouteException("Cannot load routes, the file '$filePath' does not exist");
-        }
-
-        try{
-            $loader = $this->selectLoader($filePath);
-            $routes = $loader->loadFile($filePath);
-        } catch(LoaderException $e) {
-            throw new RouteException($e->getMessage());
-        }
-        // load any route files we've been asked to import
-        if (!empty($routes["imports"])) {
-            // the import file will be relative to this file, so get the file's directory
-            $rootPath = substr($filePath, 0, strrpos($filePath, "/") + 1);
-            foreach ($routes["imports"] as $import) {
-                // load the import and merge with the route file
-                $importedRoutes = $this->loadFile($rootPath . $import);
-
-                $routes = array_replace_recursive($importedRoutes, $routes);
+        return function(RequestInterface $request, ResponseInterface $response, array $args) use ($controllerName, $method) {
+            $controller = $this->controllers[$controllerName];
+            $reflection = new \ReflectionMethod($controller, $method);
+            $arguments = [];
+            foreach ($reflection->getParameters() as $param) {
+                $typeName = $param->getType()?->getName();
+                switch (true) {
+                    case $param->name == "request":
+                    case $typeName == RequestInterface::class;
+                        $arguments[] = $request;
+                        break;
+                    case $param->name == "response";
+                    case $typeName == ResponseInterface::class;
+                        $arguments[] = $response;
+                        break;
+                    case array_key_exists($param->name, $args):
+                        $arguments[] = $args[$param->name];
+                        break;
+                    default:
+                        if (!$param->isOptional()) {
+                            throw new RouteException("The argument '{$param->getName()}' is required for the '$controllerName::$method' but it was not supplied");
+                        }
+                }
             }
-        }
-        return $routes;
+            return call_user_func_array([$controller, $method], $arguments);
+        };
     }
 
-} 
+}

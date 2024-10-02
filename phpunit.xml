@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<phpunit bootstrap="test/bootstrap.php" >
-    <testsuites>
-        <testsuite name="test">
-            <directory suffix=".php">test</directory>
-            <exclude>test/bootstrap.php</exclude>
-            <exclude>mocks/*</exclude>
-        </testsuite>
-    </testsuites>
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+    <testsuite name="unit-tests">
+        <directory suffix=".php">test</directory>
+    </testsuite>
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+    </php>
 </phpunit>

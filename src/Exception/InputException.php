@@ -2,7 +2,7 @@
 
 namespace Lexide\LazyBoy\Exception;
 
-class RouteException extends \Exception
+class InputException extends \Exception
 {
 
-} 
+}

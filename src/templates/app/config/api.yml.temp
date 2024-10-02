@@ -1,0 +1,93 @@
+imports:
+  - "routes.yml"
+
+parameters:
+  api.securityContainer.defaultConfig:
+    public: false
+
+  api.router.allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+
+  api.cors.allowedMethods: "%api.router.allowedMethods%"
+  api.cors.allowedOrigins: []
+  api.cors.allowedHeaders: []
+
+services:
+
+  api.application:
+    class: Slim\App
+    arguments:
+      - "@api.httpFactory"
+    calls:
+      - method: "add"
+        arguments:
+          - "@api.security.middleware"
+{{ addCorsMiddleware}}
+  api.httpFactory:
+    class: GuzzleHttp\Psr7\HttpFactory
+
+  api.security.configContainer:
+    class: Lexide\LazyBoy\Security\ConfigContainer
+    arguments:
+      - "%api.security.defaultConfig%"
+
+  api.security.middleware:
+    class: Lexide\LazyBoy\Middleware\SecurityMiddleware
+    arguments:
+      - "@api.responseFactory"
+      - "@api.security.configContainer"
+      - "@api.authoriser"
+
+  api.cors.middleware:
+    class: Lexide\LazyBoy\Middleware\CorsMiddleware
+    arguments:
+      - "@api.responseFactory"
+      - "%api.cors.allowedMethods%"
+      - "%api.cors.allowedOrigins%"
+      - "%api.cors.allowedHeaders%"
+
+  api.responseFactory:
+    class: Lexide\LazyBoy\Response\ResponseFactory
+
+  api.authoriser:
+    class: Lexide\LazyBoy\Security\AuthoriserContainer
+    arguments:
+      - "#api.authorisers"
+      - false
+
+  api.authoriser.public:
+    class: Lexide\LazyBoy\Security\PublicRouteAuthoriser
+    tags:
+      - "api.authorisers"
+
+  api.routeLoader:
+    class: Lexide\LazyBoy\Config\RouteLoader
+    arguments:
+      - "#api.controllers"
+      - "@api.security.configContainer"
+      - "%api.routes%"
+      - "%api.router.allowedMethods%"
+
+  api.requestDecoder.json:
+    class: Lexide\LazyBoy\Controller\Decoder\JsonDecoder
+    tags:
+      - "api.requestDecoders"
+
+  api.requestDecoder.default:
+    aliasOf: "@api.requestDecoder.json"
+
+  api.controller.decodeRequest:
+    abstract: true
+    calls:
+      - method: "setDefaultDecoder"
+        arguments:
+          - "@api.requestDecoder.default"
+      - method: "setDecoders"
+        arguments:
+          - "#api.requestDecoders"
+
+{{ apiGatewayRequestFactory }}

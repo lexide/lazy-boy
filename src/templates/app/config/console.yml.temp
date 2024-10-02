@@ -1,0 +1,13 @@
+services:
+
+  console.application:
+    class: Symfony\Component\Console\Application
+    arguments:
+      - "{{ consoleAppName }}"
+      - "1.0"
+    calls:
+      - method: "addCommands"
+        arguments:
+          - "#console.commands"
+{{ setAutoExit }}
+{{ lambdaInputBuilder }}

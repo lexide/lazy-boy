@@ -2,505 +2,642 @@
 
 namespace Lexide\LazyBoy\Test\Config;
 
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Mockery\Mock;
-use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\vfsStreamDirectory;
-use org\bovigo\vfs\vfsStreamWrapper;
-use PHPUnit\Framework\TestCase;
-use Silex\Application;
-use Silex\ControllerCollection;
-use Silex\Route;
 use Lexide\LazyBoy\Config\RouteLoader;
 use Lexide\LazyBoy\Exception\RouteException;
-use Lexide\Syringe\Loader\JsonLoader;
-use Lexide\Syringe\Loader\YamlLoader;
-use Lexide\LazyBoy\Security\SecurityContainer;
+use Lexide\LazyBoy\Security\ConfigContainer;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use Mockery\MockInterface;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Slim\App;
+use Slim\Interfaces\RouteGroupInterface;
+use Slim\Interfaces\RouteInterface;
 
 class RouteLoaderTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
-    /**
-     * @var Application|Mock
-     */
-    protected $app;
-
-    /**
-     * @var SecurityContainer|Mock
-     */
-    protected $securityContainer;
-
-    /**
-     * @var ControllerCollection|Mock $controllerCollection
-     */
-    protected $controllerCollection;
-
-    /**
-     * @var Route|Mock
-     */
-    protected $route;
+    protected ConfigContainer|MockInterface $securityContainer;
+    protected App|MockInterface $app;
+    protected RouteInterface|MockInterface $route;
+    protected RouteGroupInterface|MockInterface $group;
+    protected RequestInterface|MockInterface $request;
+    protected ResponseInterface|MockInterface $response;
+    protected MockController $controller;
 
     public function setUp(): void
     {
-        $this->route = \Mockery::mock("Silex\\Route");
-        $this->controllerCollection = \Mockery::mock("Silex\\ContainerCollection");
-        $this->app = \Mockery::mock("Silex\\Application");
-        $this->securityContainer = \Mockery::mock("Lexide\\LazyBoy\\Security\\SecurityContainer");
+        $this->securityContainer = \Mockery::mock(ConfigContainer::class);
+        $this->app = \Mockery::mock(App::class);
+        $this->route = \Mockery::mock(RouteInterface::class);
+        $this->group = \Mockery::mock(RouteGroupInterface::class);
+        $this->request = \Mockery::mock(RequestInterface::class);
+        $this->response = \Mockery::mock(ResponseInterface::class);
+        $this->controller = new MockController();
+    }
 
-        vfsStreamWrapper::register();
+
+    /**
+     * @dataProvider routesProvider
+     *
+     * @param array $routes
+     * @param array $expectedRouteMapping
+     * @param array $expectedSecurityConfig
+     * @param array $expectedGroupMapping
+     * @throws RouteException
+     */
+    public function testSettingRoutes(
+        array $routes,
+        array $expectedRouteMapping,
+        array $expectedSecurityConfig,
+        array $expectedGroupMapping = []
+    ) {
+
+        $expectedControllerCalls = [];
+
+        foreach ($expectedRouteMapping as $name => ["method" => $method, "url" => $url, "action" => $actionMethod]) {
+            $this->app->shouldReceive("map")->with([strtoupper($method)], $url, \Mockery::type("callable"))->once()->andReturnUsing(
+                function($foo, $bar, $callable) {
+                    $callable($this->request, $this->response, []);
+                    return $this->route;
+                }
+            );
+            $this->route->shouldReceive("setName")->with($name)->once();
+            $expectedControllerCalls[$actionMethod] = $expectedControllerCalls[$actionMethod] ?? 0;
+            ++$expectedControllerCalls[$actionMethod];
+        }
+
+        foreach ($expectedGroupMapping as $groupUrl) {
+            $this->app->shouldReceive("group")->with($groupUrl, \Mockery::type("callable"))->once()->andReturnUsing(
+                function ($foo, $callable) {
+                    $callable($this->app);
+                    return $this->group;
+                }
+            );
+        }
+
+        foreach ($expectedSecurityConfig as $route => $config) {
+            $this->securityContainer->shouldReceive("setSecurityConfigForRoute")->with($route, $config)->once();
+        }
+
+        $loader = new RouteLoader(
+            ["mock" => $this->controller],
+            $this->securityContainer,
+            $routes
+        );
+
+        $loader->setRoutes($this->app);
+
+        $callCount = $this->controller->getCallCount();
+        foreach ($expectedControllerCalls as $method => $count) {
+            $this->assertArrayHasKey($method, $callCount);
+            $this->assertSame($count, $callCount[$method]);
+            unset($callCount[$method]);
+        }
+        if (!empty($callCount)) {
+            $this->fail("More controller calls were made than were expected:\n" . json_encode($callCount));
+        }
+
     }
 
     /**
-     * @dataProvider routeProvider
+     * @dataProvider invalidRoutesProvider
      *
      * @param array $routes
-     * @param string $exceptionPattern
-     * @param array $expectedCalls
+     * @param string $expectedExceptionRegex
+     * @param ?array $allowedMethods
      * @throws RouteException
      */
-    public function testRouteLoading(array $routes, $exceptionPattern, array $expectedCalls = []) {
-
-        $this->controllerCollection->shouldReceive("bind");
-
-        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
-
-        foreach ($expectedCalls as $call) {
-            $this->app->shouldReceive("match")->with($call["url"], $call["action"])->once()->andReturn($this->route);
-            $this->route->shouldReceive("method")->with(strtoupper($call["method"]))->once()->andReturn($this->controllerCollection);
-        }
-
-        try {
-            $loader->parseRoutes($routes);
-            if (!empty($exceptionPattern)) {
-                $this->fail("The RouteLoader did not throw an exception as expected");
-            } elseif (empty($expectedCalls)) {
-                $this->expectNotToPerformAssertions();
-            }
-        } catch (RouteException $e) {
-            if (empty($exceptionPattern)) {
-                throw $e;
-            } else {
-                $this->assertMatchesRegularExpression($exceptionPattern, $e->getMessage());
-            }
-        }
-
-    }
-
-    public function testRouteFileLoading() {
-
-        $counts = [];
-        $this->controllerCollection->shouldReceive("bind")->andReturnUsing(function($routeName) use (&$counts) {
-            if (empty($counts[$routeName])) {
-                $counts[$routeName] = 0;
-            }
-            ++$counts[$routeName];
-        });
-
-        $this->app->shouldReceive("match")->andReturn($this->route);
-        $this->route->shouldReceive("method")->with("GET")->andReturn($this->controllerCollection);
-        $this->route->shouldReceive("method")->with("POST")->andReturn($this->controllerCollection);
-
-        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
-        $loader->addLoader(new JsonLoader());
-        $loader->addLoader(new YamlLoader());
-
-        try {
-            $loader->parseRoutes(123);
-            $this->fail("Should not be able to parse routes with an invalid routes argument");
-        } catch (\Exception $e) {
-            $this->assertInstanceOf("\\InvalidArgumentException", $e);
-            unset($e);
-        }
-
-        try {
-            $loader->parseRoutes("nonExistentFile");
-            $this->fail("Should not be able to parse routes with a non existent file");
-        } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertMatchesRegularExpression("/Cannot load routes/", $e->getMessage());
-            unset($e);
-        }
-
-        vfsStreamWrapper::setRoot(new vfsStreamDirectory("test", 0777));
-
-        $routesFile = vfsStream::url("test/test.json");
-        $file = vfsStream::newFile("test.json", 0777);
-        $file->setContent("not JSON");
-        vfsStreamWrapper::getRoot()->addChild($file);
-
-        try {
-            $loader->parseRoutes($routesFile);
-            $this->fail("Should not be able to parse routes from an invalid JSON file");
-        } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertMatchesRegularExpression("/Could not load the JSON file/", $e->getMessage());
-            unset($e);
-        }
-
-        // Test that we can correctly parse JSON
-        $url = "url";
-        $action = "action";
-        $jsonRoute = "jsonRoute";
-        $content = json_encode(["routes" => [$jsonRoute => ["url" => $url, "action" => $action]]]);
-        $file->setContent($content);
-        $loader->parseRoutes($routesFile);
-
-
-        $routesFile = vfsStream::url("test/test.yaml");
-        $file = vfsStream::newFile("test.yaml", 0777);
-        $file->setContent("- \"Invalid Yaml");;
-        vfsStreamWrapper::getRoot()->addChild($file);
-
-        try{
-            $loader->parseRoutes($routesFile);
-            $this->fail("Should not be able to parse routes from an invalid Yaml file");
-        } catch (\Exception $e) {
-            $this->assertInstanceOf("\\Lexide\\LazyBoy\\Exception\\RouteException", $e);
-            $this->assertMatchesRegularExpression("/Could not load the YAML file/", $e->getMessage());
-        }
-
-        // Test that we can correctly parse YAML
-        $url = "url";
-        $action = "action";
-        $yamlRoute = "yamlRoute";
-        $content ="routes:\n  $yamlRoute:\n    url: ".$url."\n    action: ".$action;
-        $file->setContent($content);
-        $loader->parseRoutes($routesFile);
-
-        $this->assertArrayHasKey($jsonRoute, $counts, "The route in the JSON file was not parsed");
-        $this->assertEquals(1, $counts[$jsonRoute], "The route in the JSON file was not parsed exactly once");
-        $this->assertArrayHasKey($yamlRoute, $counts, "The route in the YAML file was not parsed");
-        $this->assertEquals(1, $counts[$yamlRoute], "The route in the YAML file was not parsed exactly once");
-    }
-
-    public function routeProvider()
+    public function testRouteExceptions(array $routes, string $expectedExceptionRegex, ?array $allowedMethods = null)
     {
+        $this->expectException(RouteException::class);
+        $this->expectExceptionMessageMatches($expectedExceptionRegex);
+
+        $loader = new RouteLoader(
+            ["mock" => $this->controller],
+            $this->securityContainer,
+            $routes,
+            $allowedMethods
+        );
+
+        $loader->setRoutes($this->app);
+    }
+
+    /**
+     * @dataProvider routeClosureProvider
+     *
+     * @param array $routes
+     * @param string $expectedMethod
+     * @throws RouteException
+     */
+    public function testRouteClosure(string $expectedMethod, array $args = [])
+    {
+
+        $routes = [
+            "routes" => [
+                "test" => [
+                    "url" => "foo",
+                    "action" => [
+                        "controller" => "mock",
+                        "method" => $expectedMethod
+                    ]
+                ]
+            ]
+        ];
+
+        $this->app->shouldReceive("map")->with(["GET"], "foo", \Mockery::type("callable"))->once()->andReturnUsing(
+            function($foo, $bar, $callable) use ($args) {
+                $callable($this->request, $this->response, $args);
+                return $this->route;
+            }
+        );
+        $this->securityContainer->shouldIgnoreMissing();
+        $this->route->shouldIgnoreMissing();
+
+        $loader = new RouteLoader(
+            ["mock" => $this->controller],
+            $this->securityContainer,
+            $routes
+        );
+
+        $loader->setRoutes($this->app);
+
+        $calls = $this->controller->getCallCount();
+        $this->assertArrayHasKey($expectedMethod, $calls);
+        $this->assertSame(1, $calls[$expectedMethod]);
+    }
+
+    public function testRequiredControllerArgs()
+    {
+        $this->expectException(RouteException::class);
+        $this->expectExceptionMessageMatches("/argument.*is required/");
+
+        $routes = [
+            "routes" => [
+                "test" => [
+                    "url" => "foo",
+                    "action" => [
+                        "controller" => "mock",
+                        "method" => "addArg"
+                    ]
+                ]
+            ]
+        ];
+
+        $this->app->shouldReceive("map")->with(["GET"], "foo", \Mockery::type("callable"))->once()->andReturnUsing(
+            function($foo, $bar, $callable) {
+                $callable($this->request, $this->response, []);
+                return $this->route;
+            }
+        );
+        $this->securityContainer->shouldIgnoreMissing();
+        $this->route->shouldIgnoreMissing();
+
+        $loader = new RouteLoader(
+            ["mock" => $this->controller],
+            $this->securityContainer,
+            $routes
+        );
+
+        $loader->setRoutes($this->app);
+    }
+
+    public function routesProvider(): array
+    {
+
         return [
-            [ #0 no routes or groups
-                ["invalid" => "root"],
-                "/routes/"
-            ],
-            [ #1 "routes" is not an array
-                ["routes" => "not an array"],
-                "/not in the correct format/"
-            ],
-            [ #2 route missing an action
+            "simple route" => [
                 [
                     "routes" => [
-                        ["url" => "url"]
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo")
                     ]
                 ],
-                "/route is missing required elements/"
-            ],
-            [ #3 route missing a url
                 [
-                    "routes" => [
-                        ["action" => "action"]
-                    ]
-                ],
-                "/route is missing required elements/"
-            ],
-            [ #4 route has invalid method
-                [
-                    "routes" => [
-                        [
-                            "url" => "url",
-                            "action" => "action",
-                            "method" => "invalid"
-                        ]
-                    ]
-                ],
-                "/The method .* is not allowed/"
-            ],
-            [ #5 valid route with method
-                [
-                    "routes" => [
-                        [
-                            "url" => "url",
-                            "action" => "action",
-                            "method" => "post"
-                        ]
-                    ]
-                ],
-                "",
-                [
-                    [
-                        "method" => "post",
-                        "url" => "url",
-                        "action" => "action"
-                    ]
-                ]
-            ],
-            [ #6 valid route, implicit GET
-                [
-                    "routes" => [
-                        [
-                            "url" => "url",
-                            "action" => "action"
-                        ]
-                    ]
-                ],
-                "",
-                [
-                    [
+                    "one" => [
                         "method" => "get",
-                        "url" => "url",
-                        "action" => "action"
-                    ]
-                ]
-            ],
-            [ #7 "groups" is not an array
-                ["groups" => "not an array"],
-                "/not in the correct format/"
-            ],
-            [ #8 no url for a group
-                [
-                    "groups" => [
-                        "group" => ["no" => "url"]
+                        "url" => "foo",
+                        "action" => "callFoo"
                     ]
                 ],
-                "/does not have a URL/"
+                $this->formatSecurityConfig("one")
             ],
-            [ #9 exceptions thrown when recursing contain the url prefix
+            "defaulted method" => [
                 [
-                    "groups" => [
-                        "group" => [
-                            "urlPrefix" => "blah",
-                            "routes" => "not an array"
-                        ]
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("", "foo", "mock", "callFoo")
                     ]
                 ],
-                "/'blah'/"
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                $this->formatSecurityConfig("one")
             ],
-            [ #10 valid group
+            "multiple routes" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar"),
+                        "three" => $this->formatRouteConfig("put", "baz", "mock", "callBaz")
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "two" => [
+                        "method" => "post",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ],
+                    "three" => [
+                        "method" => "put",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("one"),
+                    $this->formatSecurityConfig("two"),
+                    $this->formatSecurityConfig("three")
+                )
+            ],
+            "private route" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", [], false)
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                $this->formatSecurityConfig("one", ["public" => false])
+            ],
+            "custom security" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", ["foo" => "bar", "user" => 123])
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                $this->formatSecurityConfig("one", ["foo" => "bar", "user" => 123])
+            ],
+            "simple group" => [
                 [
                     "groups" => [
-                        "groupOne" => [
-                            "urlPrefix" => "foo",
+                        "foo" => [
                             "routes" => [
-                                "one" => [
-                                    "url" => "bar",
-                                    "action" => "action"
-                                ],
-                                "two" => [
-                                    "method" => "post",
-                                    "url" => "baz",
-                                    "action" => "action"
-                                ],
-                            ]
-                        ],
-                        "groupTwo" => [
-                            "urlPrefix" => "fizz",
-                            "routes" => [
-                                "three" => [
-                                    "url" => "buzz",
-                                    "action" => "action"
-                                ]
+                                "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
                             ]
                         ]
                     ]
                 ],
-                "",
                 [
-                    [
+                    "one" => [
                         "method" => "get",
-                        "url" => "foobar",
-                        "action" => "action"
-                    ],
-                    [
-                        "method" => "post",
-                        "url" => "foobaz",
-                        "action" => "action"
-                    ],
-                    [
-                        "method" => "get",
-                        "url" => "fizzbuzz",
-                        "action" => "action"
+                        "url" => "bar",
+                        "action" => "callBar"
                     ]
-                ]
+                ],
+                $this->formatSecurityConfig("one"),
+                [""]
             ],
-            [ #11 grouped routes that have no URL of their own
+            "group with url" => [
                 [
                     "groups" => [
-                        "groupOne" => [
-                            "urlPrefix" => "blah",
+                        "foo" => [
+                            "url" => "foo",
                             "routes" => [
-                                "one" => [
-                                    "url" => "",
-                                    "action" => "action"
-                                ],
-                                "two" => [
-                                    "action" => "action",
-                                    "method" => "post"
-                                ]
+                                "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
                             ]
                         ]
                     ]
                 ],
-                "",
                 [
-                    [
+                    "one" => [
                         "method" => "get",
-                        "url" => "blah",
-                        "action" => "action"
-                    ],
-                    [
-                        "method" => "post",
-                        "url" => "blah",
-                        "action" => "action"
+                        "url" => "bar",
+                        "action" => "callBar"
                     ]
-                ]
+                ],
+                $this->formatSecurityConfig("one"),
+                ["foo"]
             ],
-            [ #12 nested groups
+            "group security" => [
                 [
                     "groups" => [
-                        "group" => [
-                            "urlPrefix" => "we-",
+                        "foo" => [
+                            "url" => "foo",
+                            "security" => ["role" => "admin", "public" => false],
+                            "routes" => [
+                                "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo")
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                $this->formatSecurityConfig("one", ["role" => "admin", "public" => false]),
+                ["foo"]
+            ],
+            "route security overrides group security" => [
+                [
+                    "groups" => [
+                        "foo" => [
+                            "url" => "foo",
+                            "security" => ["role" => "user", "public" => false],
+                            "routes" => [
+                                "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", ["role" => "admin"])
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                $this->formatSecurityConfig("one", ["role" => "user", "public" => false], ["role" => "admin"]),
+                ["foo"]
+            ],
+            "nested groups" => [
+                [
+                    "groups" => [
+                        "foo" => [
+                            "url" => "foo",
                             "groups" => [
-                                "subgroup" => [
-                                    "urlPrefix" => "are-",
+                                "bar" => [
+                                    "url" => "bar",
                                     "routes" => [
-                                        "one" => [
-                                            "url" => "legion",
-                                            "action" => "action"
-                                        ]
+                                        "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                    ]
+                                ],
+                                "baz" => [
+                                    "url" => "baz",
+                                    "routes" => [
+                                        "two" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                        "three" => $this->formatRouteConfig("post", "baz", "mock", "callBaz")
                                     ]
                                 ]
                             ]
                         ]
                     ]
                 ],
-                "",
                 [
-                    [
+                    "one" => [
                         "method" => "get",
-                        "url" => "we-are-legion",
-                        "action" => "action"
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ],
+                    "two" => [
+                        "method" => "get",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ],
+                    "three" => [
+                        "method" => "post",
+                        "url" => "baz",
+                        "action" => "callBaz"
                     ]
-                ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("one"),
+                    $this->formatSecurityConfig("two"),
+                    $this->formatSecurityConfig("three")
+                ),
+                ["foo", "bar", "baz"]
+            ],
+            "everything together" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "two" => $this->formatRouteConfig("post", "foo", "mock", "callFoo"),
+                        "three" => $this->formatRouteConfig("put", "foo", "mock", "callFoo")
+                    ],
+                    "groups" => [
+                        "foo" => [
+                            "url" => "foo",
+                            "security" => ["public" => false],
+                            "groups" => [
+                                "bar" => [
+                                    "url" => "bar",
+                                    "security" => ["role" => "user"],
+                                    "routes" => [
+                                        "four" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                    ]
+                                ],
+                                "baz" => [
+                                    "url" => "baz",
+                                    "security" => ["role" => "admin"],
+                                    "routes" => [
+                                        "five" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                        "six" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "super admin"])
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "two" => [
+                        "method" => "post",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "three" => [
+                        "method" => "put",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "four" => [
+                        "method" => "get",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ],
+                    "five" => [
+                        "method" => "get",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ],
+                    "six" => [
+                        "method" => "post",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("one"),
+                    $this->formatSecurityConfig("two"),
+                    $this->formatSecurityConfig("three"),
+                    $this->formatSecurityConfig("four", ["public" => false], ["role" => "user"]),
+                    $this->formatSecurityConfig("five", ["public" => false], ["role" => "admin"]),
+                    $this->formatSecurityConfig("six", ["public" => false], ["role" => "super admin"])
+                ),
+                ["foo", "bar", "baz"]
             ]
-
         ];
     }
 
-    public function testImportingRoutes()
+    public function invalidRoutesProvider(): array
     {
-        $overrideUrl = "override.com";
-
-        vfsStreamWrapper::setRoot(new vfsStreamDirectory("test", 0777));
-
-        $routesFile = vfsStream::url("test/test.json");
-        $file = vfsStream::newFile("test.json", 0777);
-        $content = [
-            "imports" => [
-                "import1.json",
-                "imp/ort2.json"
-            ],
-            "routes" => [
-                "rootFileRoute" => [
-                    "url" => "url",
-                    "action" => "blah"
+        return [
+            "no url" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "", "mock", "callFoo")
+                    ]
                 ],
-                "overrideRoute" => [
-                    "url" => $overrideUrl,
-                    "method" => "post",
-                    "action" => "blah"
-                ]
-            ]
-        ];
-        $file->setContent(json_encode($content));
-        vfsStreamWrapper::getRoot()->addChild($file);
-
-        $import1 = vfsStream::newFile("import1.json", 0777);
-        $import1Content = [
-            "routes" => [
-                "import1Route" => [
-                    "url" => "url",
-                    "action" => "action"
-                ],
-                "overrideRoute" => [
-                    "url" => "shouldn't be this",
-                    "method" => "post",
-                    "action" => "nor this"
-                ]
-            ]
-        ];
-        $import1->setContent(json_encode($import1Content));
-        vfsStreamWrapper::getRoot()->addChild($import1);
-
-        $importDir = vfsStream::newDirectory("imp", 0777);
-        $import2 = vfsStream::newFile("ort2.json", 0777);
-        $import2Content = [
-            "routes" => [
-                "import2Route" => [
-                    "url" => "url",
-                    "action" => "action"
-                ]
+                "/does not contain a URL/"
             ],
-            "imports" => [
-                "import3.json"
+            "invalid method" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("put", "foo", "mock", "callFoo")
+                    ]
+                ],
+                "/method.*is not allowed/",
+                ["GET", "POST"]
+            ],
+            "no action" => [
+                [
+                    "routes" => [
+                        "one" => [
+                            "method" => "get",
+                            "url" => "foo"
+                        ]
+                    ]
+                ],
+                "/does not contain an action/"
+            ],
+            "no controller in action" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "", "callFoo")
+                    ]
+                ],
+                "/does not contain.*controller name/"
+            ],
+            "no method in action" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "")
+                    ]
+                ],
+                "/does not contain.*controller.*method/"
+            ],
+            "controller not registered" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "blah", "callFoo")
+                    ]
+                ],
+                "/controller.*not registered/"
+            ],
+            "controller method doesn't exist" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "missing")
+                    ]
+                ],
+                "/method.*does not exist on controller/"
+            ],
+            "group contains no routes" => [
+                [
+                    "groups" => [
+                        "url" => "blah"
+                    ]
+                ],
+                "/does not contain any route config/"
             ]
         ];
-        $import2->setContent(json_encode($import2Content));
-        $importDir->addChild($import2);
+    }
 
-        $import3 = vfsStream::newFile("import3.json", 0777);
-        $import3Content = [
-            "routes" => [
-                "import3Route" => [
-                    "url" => "url",
-                    "action" => "action"
-                ]
+    public function routeClosureProvider(): array
+    {
+        return [
+            "no args" => [
+                "callFoo"
+            ],
+            "with request" => [
+                "addRequest"
+            ],
+            "with typed request" => [
+                "addRequestInterface"
+            ],
+            "with response" => [
+                "addResponse"
+            ],
+            "with typed response" => [
+                "addResponseInterface"
+            ],
+            "with args" => [
+                "addArg",
+                ["foo" => "bar"]
+            ],
+            "with optional arg (present)" => [
+                "addOptionalArg",
+                ["foo" => "bar"]
+            ],
+            "with optional arg (missing)" => [
+                "addOptionalArg"
+            ],
+            "with everything" => [
+                "addAll",
+                ["foo" => "one", "bar" => 2]
             ]
         ];
-        $import3->setContent(json_encode($import3Content));
-        $importDir->addChild($import3);
+    }
 
-        vfsStreamWrapper::getRoot()->addChild($importDir);
-
-
-        // setup mocks
-        $counts = [];
-
-        $this->controllerCollection->shouldReceive("bind")->andReturnUsing(function($routeName) use (&$counts) {
-            if (empty($counts[$routeName])) {
-                $counts[$routeName] = 0;
-            }
-            ++$counts[$routeName];
-        });
-
-        $this->route->shouldReceive("method")->with("GET")->andReturn($this->controllerCollection);
-        $this->route->shouldReceive("method")->with("POST")->atLeast()->once()->andReturn($this->controllerCollection);
-        // add check to make sure the overridden route uses the correct version (from the "root"-most file)
-        $this->app->shouldReceive("match")->withArgs([$overrideUrl, \Mockery::any()])->atLeast()->once()->andReturn($this->route);
-
-        // add default expectation for match last, so it doesn't interfere with the more specific expectation above
-        $this->app->shouldReceive("match")->andReturn($this->route);
-
-        // create the loader and run the test
-        $loader = new RouteLoader($this->app, $this->securityContainer, ["get", "post"]);
-        $loader->addLoader(new JsonLoader());
-
-        $loader->parseRoutes($routesFile);
-
-        $expected = [
-            "rootFileRoute" => 1,
-            "overrideRoute" => 1,
-            "import1Route" => 1,
-            "import2Route" => 1,
-            "import3Route" => 1,
+    protected function formatRouteConfig(string $method, string $url, string $controller, string $action, array $security = [], ?bool $public = null): array
+    {
+        $config = [
+            "method" => $method,
+            "url" => $url,
+            "action" => [
+                "controller" => $controller,
+                "method" => $action
+            ]
         ];
-
-        foreach ($expected as $route => $count) {
-            $this->assertArrayHasKey($route, $counts, "check the route '$route' was set at all");
-            $this->assertEquals($count, $counts[$route], "Check the route '$route' was set x$count");
+        if (!empty($security)) {
+            $config["security"] = $security;
         }
+        if (!is_null($public)) {
+            $config["public"] = $public;
+        }
+        return $config;
     }
 
-    public function tearDown(): void
+    protected function formatSecurityConfig(string $name, array ...$configs): array
     {
-        \Mockery::close();
+        return [$name => array_replace(["public" => true], ...$configs)];
     }
 
 }
