@@ -26,7 +26,10 @@ composer require lexide/lazy-boy:~4.0.0
 ```    
 
 Installation will include [Puzzle-DI] and [ProForma] as dependencies, which have plugins that LazyBoy requires, so you 
-will need to enable those when asked or by adding the following to `composer.json`.
+will need to enable those when asked.
+
+You will also need to whitelist LazyBoy for use with ProForma in Puzzle-DI. Both steps can be done by adding the following 
+config to `composer.json`:
 
 ```json
 {
@@ -34,6 +37,15 @@ will need to enable those when asked or by adding the following to `composer.jso
     "allow-plugins": {
       "lexide/pro-forma": true,
       "lexide/puzzle-di": true
+    }
+  },
+  "extra": {
+    "lexide/puzzle-di": {
+      "whitelist": {
+        "lexide/pro-forma": [
+          "lexide/lazy-boy"
+        ]
+      }
     }
   }
 }
