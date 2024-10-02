@@ -18,18 +18,35 @@ have been defined in [Syringe] DI config. You can also use [Puzzle-DI] to load s
 * [Syringe] 2.2+
 
 ## Installation
-install using composer:
 
-    composer require lexide/lazy-boy:~4.0.0
+Install using composer:
 
-LazyBoy will automatically generate several files from templates, whenever `composer update` or `composer install` is run.
-You are free to make modifications to the generated output; LazyBoy will not overwrite a file which already exists, so 
-committing those changes to a VCS is safe and recommended. Having your VCS ignore the files will mean they are generated
-when you install vendors on a freshly cloned repository, however it means that you will always get the very latest 
-version of the templates.
+```
+composer require lexide/lazy-boy:~4.0.0
+```    
 
-If you want to disable automatic file generation, so you can use LazyBoy classes on their own, add the following to your 
-composer file:
+Installation will include [Puzzle-DI] and [ProForma] as dependencies, which have plugins that LazyBoy requires, so you 
+will need to enable those when asked or by adding the following to `composer.json`.
+
+```json
+{
+  "config": {
+    "allow-plugins": {
+      "lexide/pro-forma": true,
+      "lexide/puzzle-di": true
+    }
+  }
+}
+```
+
+If enabled, LazyBoy will use ProForma to automatically generate several files from templates, whenever `composer update` or 
+`composer install` is run. You are free to make modifications to the generated output; LazyBoy will not overwrite a file 
+which already exists, so committing those changes to a VCS is safe and recommended. Having your VCS ignore the files will 
+mean they are generated when you install vendors on a freshly cloned repository, however it means that you will always 
+get the very latest version of the templates.
+
+If you want to disable automatic file generation, so you can use LazyBoy classes on their own, you can either disable the
+ProForma plugin or add the following to your composer file:
 
 ```json
 {
@@ -52,8 +69,8 @@ All that is left to do is create a vhost or otherwise point requests to `web/ind
 ### Application types
 
 By default, LazyBoy will create files required for a standard REST application. It also supports adding console scripts, 
-as a straight Symfony Console app or integrated for AWS Lambda. In addition, you can replace the default REST application
-with one for AWS ApiGateway.
+either as a straight Symfony Console app or integrated for AWS Lambda. In addition, you can replace the default REST 
+application with one for AWS ApiGateway.
 
 The application type is configured with ProForma config:
 
@@ -226,10 +243,10 @@ that match the following criteria:
 | Response  | Has the name `$response` or has the type `Psr\Http\Message\ResponseInterface`             |
 | Parameter | Named for the URL parameter in question e.g. `$id` would match from the URL `/user/{id}`* | 
 
-\* *Parameter types are not checked by LazyBoy; it is your responsibility to ensure the correct type is assigned*
+\* *URL Parameter types are not checked by LazyBoy; it is your responsibility to ensure the correct type is assigned*
 
-LazyBoy provides a `ResponseFactory` service which can be used as a convenient method of creating common response types, 
-such as error responses, JSON responses, no content responses, etc...
+LazyBoy also provides a `ResponseFactory` service which can be used as a convenient method of creating common responses, 
+such as error responses, JSON responses, no-content responses, etc...
 
 ### Configuration
 
@@ -266,7 +283,7 @@ parameters:
 
 For allowed Origins and Headers, an empty list will insert `"*"` as the value in the CORS response headers. This is a
 fallback and not recommended for general use; if you're using CORS it should be configured only for the origins and 
-headers that you need.
+headers that you need or your application may not be secure.
 
 To disable the middleware, set "useCors" to false in ProForma config when generating code files, or remove the middleware 
 from the Slim application in DI config.
@@ -286,16 +303,17 @@ validate a request. For example:
 class RoleAuthoriser implements AuthoriserInterface
 {
 
-    protected $userDao;
+    protected $usersDao;
 
-    public function __construct(UserDao $userDao)
+    public function __construct(UsersDao $usersDao)
     {
-        $this->userDao = $userDao;
+        $this->usersDao = $usersDao;
     }
 
     public function checkAuthorisation(RequestInterface $request, array $securityContext): bool
     {
-        $userId = $request->getAttribute("userId");
+        $route = $request->getAttribute("route");
+        $userId = $route->getArgument("id");
         $user = $this->usersDao->getUser($userId);
         return $user->getRole() == $securityContext["role"];
     }
@@ -303,12 +321,12 @@ class RoleAuthoriser implements AuthoriserInterface
 }
 ```
 
-This authoriser gets a users ID from the request* loads the user record from a data store and checks the users role 
-against the role that the route requires. If the two match then the check passes.
+This authoriser gets a users ID from the request URL (via the route object), loads the user record from a Data Access 
+Object and checks the user's role against the role that the route requires. If the two match then the check passes.
 
-This is a convoluted example that wouldn't be used in a real system, but serves to show how authorisers can be created 
-and the types of things they should do. As a general rule, a single Authoriser should check a single thing, so that they
-are composable and reusable.
+This is a convoluted example that we wouldn't expect to be used in a real system, but serves to show how authorisers work 
+and the things they can do. As a general rule, a single Authoriser should check a single thing, so that they are 
+composable and reusable.
 
 Authorisers can be combined by using an `AuthoriserContainer`. This is itself an Authoriser, but one that loops over a
 list of other Authorisers, checking the request against each one in turn. It has two modes, "requireAll" and "requireOne",
