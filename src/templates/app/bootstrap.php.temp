@@ -11,6 +11,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 {{puzzleConfigUseStatement}}
 
+include_once(dirname(__DIR__) . "/vendor/autoload.php");
+
 /**
  * @throws ConfigException
  * @throws ReferenceException
@@ -35,7 +37,7 @@ function buildContainer(): Container {
     // add include paths as syringe config paths
     $configPaths = array_merge(
         [{{ lambdaEnvConfigDir }}
-            "$appDir/config",
+            "$appDir/app/config",
             $appDir,
         ],
         $configPaths
