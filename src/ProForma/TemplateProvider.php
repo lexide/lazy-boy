@@ -76,7 +76,7 @@ class TemplateProvider implements TemplateProviderInterface
         $apiReplacements = [
             "apiGatewayRequestFactory" => $apiGateway
                 ? "  apiGateway.requestFactory:\n" .
-                  "    class: LexisNexis\SelfDeclarations\Request\RequestFactory\n"
+                  "    class: Lexide\LazyBoy\ApiGateway\RequestFactory\n"
                 : "",
             "addCorsMiddleware" => $useCors
                 ? '      - method: "add"' . "\n" .
