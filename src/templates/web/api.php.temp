@@ -6,7 +6,7 @@ use Lexide\LazyBoy\Config\RouteLoader;
 use Psr\Log\LoggerInterface;
 use Slim\App;
 
-include("../app/bootstrap.php");
+include(__DIR__ . "/../app/bootstrap.php");
 
 try {
     $container = buildContainer();

@@ -26,14 +26,15 @@ services:
       - method: "add"
         arguments:
           - "@api.security.middleware"
-{{ addCorsMiddleware}}
+{{ addCorsMiddleware }}      - method: "addRoutingMiddleware"
+
   api.httpFactory:
     class: GuzzleHttp\Psr7\HttpFactory
 
   api.security.configContainer:
     class: Lexide\LazyBoy\Security\ConfigContainer
     arguments:
-      - "%api.security.defaultConfig%"
+      - "%api.securityContainer.defaultConfig%"
 
   api.security.middleware:
     class: Lexide\LazyBoy\Middleware\SecurityMiddleware
@@ -62,7 +63,7 @@ services:
   api.authoriser.public:
     class: Lexide\LazyBoy\Security\PublicRouteAuthoriser
     tags:
-      - "api.authorisers"
+      api.authorisers: 10
 
   api.routeLoader:
     class: Lexide\LazyBoy\Config\RouteLoader

@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Interfaces\RouteInterface;
+use Slim\Routing\RouteContext;
 
 class SecurityMiddleware implements MiddlewareInterface
 {
@@ -38,7 +39,7 @@ class SecurityMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $route = $request->getAttribute("route");
+        $route = $request->getAttribute(RouteContext::ROUTE);
 
         if (!$route instanceof RouteInterface) {
             return $this->responseFactory->createNotFound();
