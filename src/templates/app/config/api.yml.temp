@@ -26,7 +26,7 @@ services:
       - method: "add"
         arguments:
           - "@api.security.middleware"
-{{ addCorsMiddleware}}      - method: "addRoutingMiddleware"
+{{ addCorsMiddleware }}      - method: "addRoutingMiddleware"
 
   api.httpFactory:
     class: GuzzleHttp\Psr7\HttpFactory
