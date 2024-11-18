@@ -7,6 +7,7 @@ use Lexide\LazyBoy\Security\ConfigContainer;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Slim\App;
+use Slim\Routing\RouteCollectorProxy;
 
 class RouteLoader
 {
@@ -61,13 +62,13 @@ class RouteLoader
     }
 
     /**
-     * @param App $app
+     * @param RouteCollectorProxy $app
      * @param array $config
      * @param array $securityConfig
      * @param string $urlPrefix
      * @throws RouteException
      */
-    protected function applyRoutes(App $app, array $config, array $securityConfig = [], string $urlPrefix = ""): void
+    protected function applyRoutes(RouteCollectorProxy $app, array $config, array $securityConfig = [], string $urlPrefix = ""): void
     {
         foreach ($config["routes"] ?? [] as $name => $route) {
             if (empty($route["url"])) {
@@ -123,7 +124,7 @@ class RouteLoader
             $groupSecurity = array_replace($securityConfig, $group["security"] ?? []);
             $groupUrl = $group["url"] ?? "";
             $newPrefix = $urlPrefix . $groupUrl;
-            $app->group($groupUrl, function(App $app) use ($group, $groupSecurity, $newPrefix) {
+            $app->group($groupUrl, function(RouteCollectorProxy $app) use ($group, $groupSecurity, $newPrefix) {
                 $this->applyRoutes($app, $group, $groupSecurity, $newPrefix);
             });
         }
