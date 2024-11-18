@@ -31,6 +31,7 @@ class AuthoriserContainer implements AuthoriserInterface
      */
     public function checkAuthorisation(RequestInterface $request, array $securityContext): bool
     {
+        ksort($this->authorisers);
         $defaultResponse = $this->requireAll;
         foreach ($this->authorisers as $authoriser) {
             $response = $authoriser->checkAuthorisation($request, $securityContext);
