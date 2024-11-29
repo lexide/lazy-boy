@@ -6,6 +6,7 @@ use Lexide\LazyBoy\Exception\RouteException;
 use Lexide\LazyBoy\Security\ConfigContainer;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
@@ -137,7 +138,7 @@ class RouteLoader
      */
     protected function createRouteClosure(string $controllerName, string $method): \Closure
     {
-        return function(RequestInterface $request, ResponseInterface $response, array $args) use ($controllerName, $method) {
+        return function(ServerRequestInterface $request, ResponseInterface $response, array $args) use ($controllerName, $method) {
             $controller = $this->controllers[$controllerName];
             $reflection = new \ReflectionMethod($controller, $method);
             $arguments = [];
@@ -146,6 +147,7 @@ class RouteLoader
                 switch (true) {
                     case $param->name == "request":
                     case $typeName == RequestInterface::class;
+                    case $typeName == ServerRequestInterface::class;
                         $arguments[] = $request;
                         break;
                     case $param->name == "response";
