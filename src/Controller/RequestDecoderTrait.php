@@ -4,7 +4,7 @@ namespace Lexide\LazyBoy\Controller;
 
 use Lexide\LazyBoy\Controller\Decoder\DecoderInterface;
 use Lexide\LazyBoy\Exception\DecodeException;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 trait RequestDecoderTrait
 {
@@ -44,11 +44,11 @@ trait RequestDecoderTrait
     }
 
     /**
-     * @param RequestInterface $request
+     * @param ServerRequestInterface $request
      * @return mixed
      * @throws DecodeException
      */
-    protected function decodeRequest(RequestInterface $request): mixed
+    protected function decodeRequest(ServerRequestInterface $request): mixed
     {
         $mimeType = $request->getHeader("Content-Type")[0] ?? null;
         if (!empty($mimeType)) {

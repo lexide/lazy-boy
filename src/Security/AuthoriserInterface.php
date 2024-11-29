@@ -2,7 +2,7 @@
 
 namespace Lexide\LazyBoy\Security;
 
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 interface AuthoriserInterface
 {
@@ -10,10 +10,10 @@ interface AuthoriserInterface
     /**
      * Return true if authorised
      *
-     * @param RequestInterface $request
+     * @param ServerRequestInterface $request
      * @param array $securityContext
      * @return bool
      */
-    public function checkAuthorisation(RequestInterface $request, array $securityContext): bool;
+    public function checkAuthorisation(ServerRequestInterface $request, array $securityContext): bool;
 
 }

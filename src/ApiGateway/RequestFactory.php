@@ -23,7 +23,7 @@ class RequestFactory
             throw new RequestException("Event does not have a URI and HTTP method");
         }
 
-        $queryString = $event["rawQueryString"] ?? null;
+        $queryString = $event["rawQueryString"] ?? "";
 
         $uri = $path . (!empty($queryString) ? "?$queryString" : "");
         parse_str($queryString, $queryParams);

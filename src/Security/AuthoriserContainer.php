@@ -2,7 +2,7 @@
 
 namespace Lexide\LazyBoy\Security;
 
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class AuthoriserContainer implements AuthoriserInterface
 {
@@ -29,7 +29,7 @@ class AuthoriserContainer implements AuthoriserInterface
     /**
      * {@inhritDoc}
      */
-    public function checkAuthorisation(RequestInterface $request, array $securityContext): bool
+    public function checkAuthorisation(ServerRequestInterface $request, array $securityContext): bool
     {
         ksort($this->authorisers);
         $defaultResponse = $this->requireAll;
