@@ -10,6 +10,7 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
 use Slim\Interfaces\RouteGroupInterface;
 use Slim\Interfaces\RouteInterface;
@@ -22,7 +23,7 @@ class RouteLoaderTest extends TestCase
     protected App|MockInterface $app;
     protected RouteInterface|MockInterface $route;
     protected RouteGroupInterface|MockInterface $group;
-    protected RequestInterface|MockInterface $request;
+    protected ServerRequestInterface|MockInterface $request;
     protected ResponseInterface|MockInterface $response;
     protected MockController $controller;
 
@@ -32,7 +33,7 @@ class RouteLoaderTest extends TestCase
         $this->app = \Mockery::mock(App::class);
         $this->route = \Mockery::mock(RouteInterface::class);
         $this->group = \Mockery::mock(RouteGroupInterface::class);
-        $this->request = \Mockery::mock(RequestInterface::class);
+        $this->request = \Mockery::mock(ServerRequestInterface::class);
         $this->response = \Mockery::mock(ResponseInterface::class);
         $this->controller = new MockController();
     }

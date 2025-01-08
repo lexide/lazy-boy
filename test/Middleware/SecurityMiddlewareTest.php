@@ -5,6 +5,7 @@ namespace Lexide\LazyBoy\Test\Middleware;
 use Lexide\LazyBoy\Middleware\SecurityMiddleware;
 use Lexide\LazyBoy\Response\ResponseFactory;
 use Lexide\LazyBoy\Security\AuthoriserInterface;
+use Lexide\LazyBoy\Security\AuthoriserResponse;
 use Lexide\LazyBoy\Security\ConfigContainer;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
@@ -25,6 +26,7 @@ class SecurityMiddlewareTest extends TestCase
     protected ResponseInterface|MockInterface $response;
     protected ConfigContainer|MockInterface $securityContainer;
     protected AuthoriserInterface|MockInterface $authoriser;
+    protected AuthoriserResponse|MockInterface $authoriserResponse;
 
     public function setUp(): void
     {
@@ -36,6 +38,7 @@ class SecurityMiddlewareTest extends TestCase
         $this->response = \Mockery::mock(ResponseInterface::class);
         $this->securityContainer = \Mockery::mock(ConfigContainer::class);
         $this->authoriser = \Mockery::mock(AuthoriserInterface::class);
+        $this->authoriserResponse = \Mockery::mock(AuthoriserResponse::class);
     }
 
     public function testNoRoute()
@@ -55,7 +58,9 @@ class SecurityMiddlewareTest extends TestCase
         $this->request->shouldReceive("getAttribute")->andReturn($this->route);
         $this->securityContainer->shouldReceive("getSecurityConfigForRoute")->with("foo")->once()->andReturn([]);
 
-        $this->authoriser->shouldReceive("checkAuthorisation")->once()->andReturnFalse();
+        $this->authoriserResponse->shouldReceive("getSuccess")->andReturnFalse();
+        $this->authoriserResponse->shouldReceive("getErrorResponseCode")->andReturn(0);
+        $this->authoriser->shouldReceive("checkAuthorisation")->once()->andReturn($this->authoriserResponse);
         $this->responseFactory->shouldReceive("createNotFound")->once()->andReturn($this->response);
 
         $this->requestHandler->shouldNotReceive("handle");
@@ -64,13 +69,34 @@ class SecurityMiddlewareTest extends TestCase
         $middleware->process($this->request, $this->requestHandler);
     }
 
+    public function testNotAuthorisedWithResponseCode()
+    {
+        $code = 401;
+        $message = "foo";
+
+        $this->request->shouldReceive("getAttribute")->andReturn($this->route);
+        $this->securityContainer->shouldReceive("getSecurityConfigForRoute")->with("foo")->once()->andReturn([]);
+
+        $this->authoriserResponse->shouldReceive("getSuccess")->andReturnFalse();
+        $this->authoriserResponse->shouldReceive("getErrorResponseCode")->andReturn($code);
+        $this->authoriserResponse->shouldReceive("getErrorMessage")->andReturn($message);
+        $this->authoriser->shouldReceive("checkAuthorisation")->once()->andReturn($this->authoriserResponse);
+
+        $this->responseFactory->shouldReceive("createError")->with($message, $code)->once()->andReturn($this->response);
+
+        $this->requestHandler->shouldNotReceive("handle");
+
+        $middleware = new SecurityMiddleware($this->responseFactory, $this->securityContainer, $this->authoriser);
+        $middleware->process($this->request, $this->requestHandler);
+    }
 
     public function testAuthorised()
     {
         $this->request->shouldReceive("getAttribute")->andReturn($this->route);
         $this->securityContainer->shouldReceive("getSecurityConfigForRoute")->with("foo")->once()->andReturn([]);
 
-        $this->authoriser->shouldReceive("checkAuthorisation")->once()->andReturnTrue();
+        $this->authoriserResponse->shouldReceive("getSuccess")->andReturnTrue();
+        $this->authoriser->shouldReceive("checkAuthorisation")->once()->andReturn($this->authoriserResponse);
         $this->responseFactory->shouldNotReceive("createNotFound");
 
         $this->requestHandler->shouldReceive("handle")->with($this->request)->once()->andReturn($this->response);
