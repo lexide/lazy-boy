@@ -58,10 +58,16 @@ services:
     class: Lexide\LazyBoy\Security\AuthoriserContainer
     arguments:
       - "#api.authorisers"
+      - "@api.authoriser.responseFactory"
       - false
+
+  api.authoriser.responseFactory:
+    class: Lexide\LazyBoy\Security\AuthoriserResponseFactory
 
   api.authoriser.public:
     class: Lexide\LazyBoy\Security\PublicRouteAuthoriser
+    arguments:
+      - "@api.authoriser.responseFactory"
     tags:
       api.authorisers: 10
 
