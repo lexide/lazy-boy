@@ -30,7 +30,7 @@ class AuthoriserContainer implements AuthoriserInterface
     }
 
     /**
-     * {@inhritDoc}
+     * {@inheritDoc}
      */
     public function checkAuthorisation(ServerRequestInterface $request, array $securityContext): AuthoriserResponse
     {
