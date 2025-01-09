@@ -47,9 +47,16 @@ class SecurityMiddleware implements MiddlewareInterface
 
         $security = $this->securityContainer->getSecurityConfigForRoute($route->getName());
 
-        return $this->authoriser->checkAuthorisation($request, $security)
-            ? $handler->handle($request)
-            : $this->responseFactory->createNotFound();
+        $authResponse = $this->authoriser->checkAuthorisation($request, $security);
+
+        return match (true) {
+            $authResponse->getSuccess() => $handler->handle($request),
+            ($authResponse->getErrorResponseCode() == 0) => $this->responseFactory->createNotFound(),
+            default => $this->responseFactory->createError(
+                $authResponse->getErrorMessage() ?: "Authorisation error",
+                $authResponse->getErrorResponseCode()
+            )
+        };
     }
 
 }

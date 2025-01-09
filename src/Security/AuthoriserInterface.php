@@ -8,12 +8,10 @@ interface AuthoriserInterface
 {
 
     /**
-     * Return true if authorised
-     *
      * @param ServerRequestInterface $request
      * @param array $securityContext
-     * @return bool
+     * @return AuthoriserResponse
      */
-    public function checkAuthorisation(ServerRequestInterface $request, array $securityContext): bool;
+    public function checkAuthorisation(ServerRequestInterface $request, array $securityContext): AuthoriserResponse;
 
 }
