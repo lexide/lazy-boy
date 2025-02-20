@@ -153,8 +153,8 @@ class TemplateProvider implements TemplateProviderInterface
                 )
                 : TemplateFactory::create(
                     "lambda",
-                    "$templateDir/app/lambda.temp",
-                    "app/lambda"
+                    "$templateDir/app/lambda.php.temp",
+                    "app/lambda.php"
                 );
         }
 

@@ -5,7 +5,7 @@ use Lexide\LazyBoy\Lambda\InputBuilder;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Application;
 
-include("./bootstrap.php");
+include(__DIR__ . "/bootstrap.php");
 
 try {
     $container = buildContainer();
