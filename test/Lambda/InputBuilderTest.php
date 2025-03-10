@@ -24,7 +24,10 @@ class InputBuilderTest extends TestCase
         $event = [
             "foo" => "one",
             "bar" => "two",
-            "baz" => "three"
+            "baz" => "three",
+            "blank" => "",
+            "false" => false,
+            "null" => null
         ];
 
         $inputBuilder = new InputBuilder();
@@ -67,7 +70,8 @@ class InputBuilderTest extends TestCase
         $event = [
             "foo" => "one",
             "bar" => "two",
-            "baz" => "three"
+            "baz" => "three",
+            "null" => null
         ];
 
         $inputBuilder = new InputBuilder();
@@ -120,12 +124,41 @@ class InputBuilderTest extends TestCase
                     "/ three( |$)/",
                 ]
             ],
+            "Templating empty string event variables into args" => [
+                json_encode(["foo" => "{event.blank}"]),
+                "",
+                [
+                    "/ ''$/",
+                ]
+            ],
+            "Templating false event variables into args" => [
+                json_encode(["foo" => "{event.false}"]),
+                "",
+                [
+                    "/ ''$/",
+                ]
+            ],
             "Templating event variables into options" => [
                 "",
                 json_encode(["--foo" => "{event.foo}", "-b" => "{event.bar}"]),
                 [
                     "/ --foo=one( |$)/",
                     "/ -b two( |$)/",
+                ]
+            ],
+            "Templating empty variables into options" => [
+                "",
+                json_encode(["--foo" => "{event.blank}", "-b" => "{event.null}"]),
+                [
+                    "/ --foo( |$)/",
+                    "/ -b( |$)/",
+                ]
+            ],
+            "Options with missing event variables are skipped" => [
+                "",
+                json_encode(["--foo" => "{event.null}", "-b" => "{event.missing}"]),
+                [
+                    "/ --foo$/"
                 ]
             ]
         ];
@@ -144,7 +177,12 @@ class InputBuilderTest extends TestCase
                 "",
                 "/invalid arg/i"
             ],
-            "Bad arg event templating" => [
+            "Null arg event templating" => [
+                json_encode(["foo" => "{event.null}"]),
+                "",
+                "/.null. does not exist/"
+            ],
+            "Missing arg event templating" => [
                 json_encode(["foo" => "{event.missing}"]),
                 "",
                 "/.missing. does not exist/"
@@ -158,11 +196,6 @@ class InputBuilderTest extends TestCase
                 "",
                 json_encode(["foo", "bar"]),
                 "/invalid option/i"
-            ],
-            "Bad option event templating" => [
-                "",
-                json_encode(["--foo" => "{event.missing}"]),
-                "/.missing. does not exist/"
             ]
         ];
     }
