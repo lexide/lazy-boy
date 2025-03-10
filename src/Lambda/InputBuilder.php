@@ -57,8 +57,13 @@ class InputBuilder
                 }
                 if (str_starts_with($value, "{event.")) {
                     $eventKey = substr($value, 7, -1);
-                    if (empty($event[$eventKey])) {
+                    if (!isset($event[$eventKey]) && $type == "arg") {
                         throw new InputException("Event value '$eventKey' does not exist");
+                    }
+                    if (!array_key_exists($eventKey, $event) && $type == "option") {
+                        // don't add this option
+                        unset($kv[$key]);
+                        continue;
                     }
                     $kv[$key] = $event[$eventKey];
                 }
