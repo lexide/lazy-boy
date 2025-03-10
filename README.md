@@ -359,6 +359,47 @@ services:
 
 Alternatively, you can use your own authoriser by replacing the `api.authoriser` service definition
 
+## Lambda
+
+In order to configure a Lambda function to run a `symfony/console` command, there are specific environment variables 
+that need to be set in the Lambda configuration:
+
+| variable | Description                                                                |
+|----------|----------------------------------------------------------------------------|
+| COMMAND  | The console command name                                                   |
+| ARGS     | A JSON encoded string of key value pairs to use for the commands arguments |
+| OPTIONS  | A JSON encoded string of key value pairs to use for the commands options   |
+
+Lambdas can be set up to parse values from an event into CLI arguments and options that a command can use. 
+Use the syntax `"{event.myEventProperty}"` to inject the value of `myEventProperty` into the specific argument or option
+
+For example, a Lambda set up with the following environment variables:
+```
+COMMAND='lexide:lazy-boy:example-command'
+ARGS='{"foo":"one","bar":"{event.bar}"}'
+OPTIONS='{"--baz":"{event.baz}","-f":"four"}'
+```
+And using the event JSON:
+```json
+{
+  "bar": "two",
+  "baz": "three"
+}
+```
+Will generate an input object equivalent to:
+```
+lexide:lazy-boy:example-command 'one' 'two' --baz='three' -f 'four'
+```
+
+### Empty and missing event properties
+
+When templating event properties into arguments, the values must not be missing or null, but can be other empty values. 
+Arguments are assumed to be required and must always have a value to insert into the command; an exception is thrown
+for invalid or missing values.
+
+For options, `null` is a valid value, signifying that the option is a flag and does not take a value. However, if an 
+event property is missing completely, the option is omitted from the command completely.
+
 ## Logging
 
 LazyBoy provides a stub service to allow logging, found in the `logging.yml` DI config file. It is integrated into the 
