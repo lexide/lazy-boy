@@ -4,6 +4,7 @@ namespace Lexide\LazyBoy\Response;
 
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
 class ResponseFactory
 {
@@ -57,11 +58,16 @@ class ResponseFactory
 
     /**
      * @param int $statusCode
+     * @param array $headers
+     * @param string|StreamInterface|null $body
      * @return ResponseInterface
      */
-    public function createResponse(int $statusCode = 200): ResponseInterface
-    {
-        return new Response($statusCode);
+    public function createResponse(
+        int $statusCode = 200,
+        array $headers = [],
+        string|StreamInterface|null $body = null
+    ): ResponseInterface {
+        return new Response($statusCode, $headers, $body);
     }
 
 }
