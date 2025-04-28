@@ -2,8 +2,6 @@ imports:
   - "routes.yml"
 
 parameters:
-  api.securityContainer.defaultConfig:
-    public: false
 
   api.router.allowedMethods:
     - "GET"
@@ -33,8 +31,6 @@ services:
 
   api.security.configContainer:
     class: Lexide\LazyBoy\Security\ConfigContainer
-    arguments:
-      - "%api.securityContainer.defaultConfig%"
 
   api.security.middleware:
     class: Lexide\LazyBoy\Middleware\SecurityMiddleware

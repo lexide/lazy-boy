@@ -14,6 +14,13 @@ class ConfigContainer
     public function __construct(array $defaultSecurity = [])
     {
         $this->defaultSecurity = $defaultSecurity;
+        if (!empty($defaultSecurity)) {
+            trigger_error(
+                "Setting default security rules in the ConfigContainer is deprecated. " .
+                "Please use a base level 'security' key on the config for your routes",
+                E_USER_DEPRECATED
+            );
+        }
     }
 
     /**
