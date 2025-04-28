@@ -59,7 +59,7 @@ class RouteLoader
      */
     public function setRoutes(App $app): void
     {
-        $this->applyRoutes($app, $this->routes);
+        $this->applyRoutes($app, $this->routes, $this->routes["security"] ?? []);
     }
 
     /**

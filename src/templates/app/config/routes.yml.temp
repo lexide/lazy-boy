@@ -1,5 +1,9 @@
 parameters:
-  api.routes: []
+  api.routes:
+    security: # default security rules for all your routes
+      public: false
+    routes: []
+    groups: []
 
 # Example Syntax:
 #    routes:
