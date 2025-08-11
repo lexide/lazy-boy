@@ -74,9 +74,13 @@ class RequestFactoryTest extends TestCase
                 [
                     "httpMethod" => "get",
                     "path" => "foo",
-                    "rawQueryString" => http_build_query(["foo" => "one", "bar" => ["two", "three"]])
+                    "multiValueQueryStringParameters" => [
+                        "foo" => ["one"],
+                        "bar" => ["two", "three"],
+                        "baz[]" => ["four", "five"]
+                    ]
                 ],
-                ["foo" => "one", "bar" => ["two", "three"]]
+                ["foo" => "one", "bar" => ["two", "three"], "baz" => ["four", "five"]]
             ],
             "body" => [
                 [
