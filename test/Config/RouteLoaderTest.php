@@ -46,13 +46,15 @@ class RouteLoaderTest extends TestCase
      * @param array $expectedRouteMapping
      * @param array $expectedSecurityConfig
      * @param array $expectedGroupMapping
+     * @param array $additionalRoutes
      * @throws RouteException
      */
     public function testSettingRoutes(
         array $routes,
         array $expectedRouteMapping,
         array $expectedSecurityConfig,
-        array $expectedGroupMapping = []
+        array $expectedGroupMapping = [],
+        array $additionalRoutes = []
     ) {
 
         $expectedControllerCalls = [];
@@ -87,6 +89,7 @@ class RouteLoaderTest extends TestCase
             $this->securityContainer,
             $routes
         );
+        $loader->addRouteConfig($additionalRoutes);
 
         $loader->setRoutes($this->app);
 
@@ -128,8 +131,8 @@ class RouteLoaderTest extends TestCase
     /**
      * @dataProvider routeClosureProvider
      *
-     * @param array $routes
      * @param string $expectedMethod
+     * @param array $args
      * @throws RouteException
      */
     public function testRouteClosure(string $expectedMethod, array $args = [])
@@ -431,6 +434,210 @@ class RouteLoaderTest extends TestCase
                 ),
                 ["foo", "bar", "baz"]
             ],
+            "adding routes" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "two" => [
+                        "method" => "post",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("one"),
+                    $this->formatSecurityConfig("two")
+                ),
+                [],
+                [
+                    "routes" => [
+                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                    ]
+                ]
+            ],
+            "don't overwrite routes" => [
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                    ]
+                ],
+                [
+                    "one" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("one")
+                ),
+                [],
+                [
+                    "routes" => [
+                        "one" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                    ]
+                ]
+            ],
+            "add groups" => [
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "one",
+                            "routes" =>[
+                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "two" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "four" => [
+                        "method" => "get",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("two"),
+                    $this->formatSecurityConfig("four")
+                ),
+                ["one", "three"],
+                [
+                    "groups" => [
+                        "three" => [
+                            "url" => "three",
+                            "routes" =>[
+                                "four" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "add routes to a group" => [
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "one",
+                            "routes" =>[
+                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "two" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ],
+                    "three" => [
+                        "method" => "get",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("two"),
+                    $this->formatSecurityConfig("three")
+                ),
+                ["one"],
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "one",
+                            "routes" =>[
+                                "three" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "don't change url or security for a group" => [
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "foo",
+                            "security" => ["public" => false],
+                            "routes" =>[
+                                "two" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "two" => [
+                        "method" => "get",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ],
+                    "three" => [
+                        "method" => "get",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("two", ["public" => false]),
+                    $this->formatSecurityConfig("three", ["public" => false])
+                ),
+                ["foo"],
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "fiz",
+                            "security" => ["public" => true],
+                            "routes" =>[
+                                "three" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            "don't overwrite routes within a group" => [
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "one",
+                            "routes" =>[
+                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                            ]
+                        ]
+                    ]
+                ],
+                [
+                    "two" => [
+                        "method" => "get",
+                        "url" => "foo",
+                        "action" => "callFoo"
+                    ]
+                ],
+                array_merge(
+                    $this->formatSecurityConfig("two")
+                ),
+                ["one"],
+                [
+                    "groups" => [
+                        "one" => [
+                            "url" => "one",
+                            "routes" =>[
+                                "two" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                            ]
+                        ]
+                    ]
+                ]
+            ],
             "everything together" => [
                 [
                     "routes" => [
@@ -447,15 +654,15 @@ class RouteLoaderTest extends TestCase
                                     "url" => "bar",
                                     "security" => ["role" => "user"],
                                     "routes" => [
-                                        "four" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                        "five" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
                                     ]
                                 ],
                                 "baz" => [
                                     "url" => "baz",
                                     "security" => ["role" => "admin"],
                                     "routes" => [
-                                        "five" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
-                                        "six" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "super admin"])
+                                        "seven" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                        "eight" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "super admin"])
                                     ]
                                 ]
                             ]
@@ -479,31 +686,82 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ],
                     "four" => [
-                        "method" => "get",
+                        "method" => "patch",
                         "url" => "bar",
                         "action" => "callBar"
                     ],
                     "five" => [
                         "method" => "get",
-                        "url" => "baz",
-                        "action" => "callBaz"
+                        "url" => "bar",
+                        "action" => "callBar"
                     ],
                     "six" => [
                         "method" => "post",
+                        "url" => "bar",
+                        "action" => "callBar"
+                    ],
+                    "seven" => [
+                        "method" => "get",
                         "url" => "baz",
                         "action" => "callBaz"
+                    ],
+                    "eight" => [
+                        "method" => "post",
+                        "url" => "baz",
+                        "action" => "callBaz"
+                    ],
+                    "nine" => [
+                        "method" => "delete",
+                        "url" => "foo",
+                        "action" => "callFoo"
                     ]
                 ],
                 array_merge(
                     $this->formatSecurityConfig("one"),
                     $this->formatSecurityConfig("two"),
                     $this->formatSecurityConfig("three"),
-                    $this->formatSecurityConfig("four", ["public" => false], ["role" => "user"]),
-                    $this->formatSecurityConfig("five", ["public" => false], ["role" => "admin"]),
-                    $this->formatSecurityConfig("six", ["public" => false], ["role" => "super admin"])
+                    $this->formatSecurityConfig("four"),
+                    $this->formatSecurityConfig("five", ["public" => false], ["role" => "user"]),
+                    $this->formatSecurityConfig("six", ["public" => false], ["role" => "user"]),
+                    $this->formatSecurityConfig("seven", ["public" => false], ["role" => "admin"]),
+                    $this->formatSecurityConfig("eight", ["public" => false], ["role" => "super admin"]),
+                    $this->formatSecurityConfig("nine", ["public" => false], ["role" => "editor"])
                 ),
-                ["foo", "bar", "baz"]
-            ]
+                ["foo", "bar", "baz", "fiz"],
+                [
+                    "routes" => [
+                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar"),
+                        "four" => $this->formatRouteConfig("patch", "bar", "mock", "callBar")
+                    ],
+                    "groups" => [
+                        "foo" => [
+                            "url" => "foo",
+                            "security" => ["public" => false],
+                            "groups" => [
+                                "bar" => [
+                                    "url" => "bar",
+                                    "routes" => [
+                                        "six" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                                    ]
+                                ],
+                                "baz" => [
+                                    "url" => "foo",
+                                    "routes" => [
+                                        "eight" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "user"])
+                                    ]
+                                ],
+                                "fiz" => [
+                                    "url" => "fiz",
+                                    "security" => ["role" => "editor"],
+                                    "routes" => [
+                                        "nine" => $this->formatRouteConfig("delete", "foo", "mock", "callFoo")
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]//*/
         ];
     }
 
