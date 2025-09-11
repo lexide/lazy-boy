@@ -54,6 +54,46 @@ class RouteLoader
     }
 
     /**
+     * @param array $routes
+     */
+    public function addRouteConfig(array $routes): void
+    {
+        $this->routes = $this->mergeRouteConfig($routes, $this->routes);
+    }
+
+    /**
+     * This method prevents existing route or group config from being altered.
+     * New routes and groups are allowed. New routes nested in existing groups are also allowed.
+     *
+     * @param array $config
+     * @param array $currentConfig
+     * @return array
+     */
+    protected function mergeRouteConfig(array $config, array $currentConfig): array
+    {
+         // don't overwrite existing routes
+        $newRoutes = array_diff_key($config["routes"] ?? [], $currentConfig["routes"] ?? []);
+        $currentConfig["routes"] = array_merge($currentConfig["routes"] ?? [], $newRoutes);
+
+        $newGroups = array_diff_key($config["groups"] ?? [], $currentConfig["groups"] ?? []);
+        $existingGroupNames = array_keys(
+            array_intersect_key($config["groups"] ?? [], $currentConfig["groups"] ?? [])
+        );
+        // add new groups
+        $currentConfig["groups"] = array_merge($currentConfig["groups"] ?? [], $newGroups);
+
+        // recursively process existing groups to prevent route or security config being overwritten
+        foreach ($existingGroupNames as $name) {
+            $currentConfig["groups"][$name] = $this->mergeRouteConfig(
+                $config["groups"][$name],
+                $currentConfig["groups"][$name]
+            );
+        }
+
+        return $currentConfig;
+    }
+
+    /**
      * @param App $app
      * @throws RouteException
      */
