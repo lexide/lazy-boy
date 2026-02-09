@@ -52,9 +52,15 @@ return function(array $event, $context) use ($container): array {
         $headers = ["Content-Type" => "application/json"];
     }
 
-    return [
+    $response = [
         "statusCode" => $statusCode,
-        "body" => $body,
-        "headers" => $headers ?? []
+        "body" => $body
     ];
+
+    // don't include the headers field if there aren't any. PHP encodes the value as `[]` whereas ApiGateway requires `{}`
+    if (!empty($headers)) {
+        $response["headers"] = $headers;
+    }
+
+    return $response;
 };
