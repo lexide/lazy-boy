@@ -4,21 +4,14 @@ namespace Lexide\LazyBoy\Test\ApiGateway;
 
 use Lexide\LazyBoy\ApiGateway\RequestFactory;
 use Lexide\LazyBoy\Exception\RequestException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class RequestFactoryTest extends TestCase
 {
 
 
-    /**
-     * @dataProvider eventProvider
-     *
-     * @param array $event
-     * @param array $expectedParams
-     * @param string $expectedBody
-     * @param array $expectedHeaders
-     * @throws RequestException
-     */
+    #[DataProvider("eventProvider")]
     public function testCreatingRequest(
         array $event,
         array $expectedParams = [],
@@ -47,12 +40,7 @@ class RequestFactoryTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider badEventProvider
-     *
-     * @param array $event
-     * @throws RequestException
-     */
+    #[DataProvider("badEventProvider")]
     public function testBadEvent(array $event)
     {
         $this->expectException(RequestException::class);
@@ -61,7 +49,7 @@ class RequestFactoryTest extends TestCase
         $factory->createFromEvent($event);
     }
 
-    public function eventProvider(): array
+    public static function eventProvider(): array
     {
         return [
             "basic event" => [
@@ -110,7 +98,7 @@ class RequestFactoryTest extends TestCase
         ];
     }
 
-    public function badEventProvider(): array
+    public static function badEventProvider(): array
     {
         return [
             "Empty event" => [

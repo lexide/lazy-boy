@@ -7,6 +7,7 @@ use Lexide\LazyBoy\Security\AuthoriserInterface;
 use Lexide\LazyBoy\Security\AuthoriserResponse;
 use Lexide\LazyBoy\Security\AuthoriserResponseFactory;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,13 +16,7 @@ class AuthoriserContainerTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
-    /**
-     * @dataProvider resultProvider
-     *
-     * @param bool $requireAll
-     * @param array $resultSequence
-     * @param bool $expectedResult
-     */
+    #[DataProvider("resultProvider")]
     public function testAuthorising(bool $requireAll, array $resultSequence, bool $expectedResult, int $expectedCode = 0)
     {
         $authoriserCount = count($resultSequence);
@@ -53,7 +48,7 @@ class AuthoriserContainerTest extends TestCase
         $this->assertSame($expectedCode, $actual->getErrorResponseCode());
     }
 
-    public function resultProvider(): array
+    public static function resultProvider(): array
     {
         return [
             "require all, passing" => [

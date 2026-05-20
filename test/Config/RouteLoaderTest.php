@@ -7,6 +7,7 @@ use Lexide\LazyBoy\Exception\RouteException;
 use Lexide\LazyBoy\Security\ConfigContainer;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -39,16 +40,7 @@ class RouteLoaderTest extends TestCase
     }
 
 
-    /**
-     * @dataProvider routesProvider
-     *
-     * @param array $routes
-     * @param array $expectedRouteMapping
-     * @param array $expectedSecurityConfig
-     * @param array $expectedGroupMapping
-     * @param array $additionalRoutes
-     * @throws RouteException
-     */
+    #[DataProvider("routesProvider")]
     public function testSettingRoutes(
         array $routes,
         array $expectedRouteMapping,
@@ -105,14 +97,7 @@ class RouteLoaderTest extends TestCase
 
     }
 
-    /**
-     * @dataProvider invalidRoutesProvider
-     *
-     * @param array $routes
-     * @param string $expectedExceptionRegex
-     * @param ?array $allowedMethods
-     * @throws RouteException
-     */
+    #[DataProvider("invalidRoutesProvider")]
     public function testRouteExceptions(array $routes, string $expectedExceptionRegex, ?array $allowedMethods = null)
     {
         $this->expectException(RouteException::class);
@@ -128,13 +113,7 @@ class RouteLoaderTest extends TestCase
         $loader->setRoutes($this->app);
     }
 
-    /**
-     * @dataProvider routeClosureProvider
-     *
-     * @param string $expectedMethod
-     * @param array $args
-     * @throws RouteException
-     */
+    #[DataProvider("routeClosureProvider")]
     public function testRouteClosure(string $expectedMethod, array $args = [])
     {
 
@@ -207,14 +186,14 @@ class RouteLoaderTest extends TestCase
         $loader->setRoutes($this->app);
     }
 
-    public function routesProvider(): array
+    public static function routesProvider(): array
     {
 
         return [
             "simple route" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo")
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo")
                     ]
                 ],
                 [
@@ -224,12 +203,12 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one")
+                self::formatSecurityConfig("one")
             ],
             "defaulted method" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("", "foo", "mock", "callFoo")
+                        "one" => self::formatRouteConfig("", "foo", "mock", "callFoo")
                     ]
                 ],
                 [
@@ -239,14 +218,14 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one")
+                self::formatSecurityConfig("one")
             ],
             "multiple routes" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
-                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar"),
-                        "three" => $this->formatRouteConfig("put", "baz", "mock", "callBaz")
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "two" => self::formatRouteConfig("post", "bar", "mock", "callBar"),
+                        "three" => self::formatRouteConfig("put", "baz", "mock", "callBaz")
                     ]
                 ],
                 [
@@ -267,15 +246,15 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("one"),
-                    $this->formatSecurityConfig("two"),
-                    $this->formatSecurityConfig("three")
+                    self::formatSecurityConfig("one"),
+                    self::formatSecurityConfig("two"),
+                    self::formatSecurityConfig("three")
                 )
             ],
             "private route" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", [], false)
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo", [], false)
                     ]
                 ],
                 [
@@ -285,12 +264,12 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one", ["public" => false])
+                self::formatSecurityConfig("one", ["public" => false])
             ],
             "custom security" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", ["foo" => "bar", "user" => 123])
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo", ["foo" => "bar", "user" => 123])
                     ]
                 ],
                 [
@@ -300,14 +279,14 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one", ["foo" => "bar", "user" => 123])
+                self::formatSecurityConfig("one", ["foo" => "bar", "user" => 123])
             ],
             "simple group" => [
                 [
                     "groups" => [
                         "foo" => [
                             "routes" => [
-                                "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                "one" => self::formatRouteConfig("get", "bar", "mock", "callBar")
                             ]
                         ]
                     ]
@@ -319,7 +298,7 @@ class RouteLoaderTest extends TestCase
                         "action" => "callBar"
                     ]
                 ],
-                $this->formatSecurityConfig("one"),
+                self::formatSecurityConfig("one"),
                 [""]
             ],
             "group with url" => [
@@ -328,7 +307,7 @@ class RouteLoaderTest extends TestCase
                         "foo" => [
                             "url" => "foo",
                             "routes" => [
-                                "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                "one" => self::formatRouteConfig("get", "bar", "mock", "callBar")
                             ]
                         ]
                     ]
@@ -340,7 +319,7 @@ class RouteLoaderTest extends TestCase
                         "action" => "callBar"
                     ]
                 ],
-                $this->formatSecurityConfig("one"),
+                self::formatSecurityConfig("one"),
                 ["foo"]
             ],
             "group security" => [
@@ -350,7 +329,7 @@ class RouteLoaderTest extends TestCase
                             "url" => "foo",
                             "security" => ["role" => "admin", "public" => false],
                             "routes" => [
-                                "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo")
+                                "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo")
                             ]
                         ]
                     ]
@@ -362,7 +341,7 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one", ["role" => "admin", "public" => false]),
+                self::formatSecurityConfig("one", ["role" => "admin", "public" => false]),
                 ["foo"]
             ],
             "route security overrides group security" => [
@@ -372,7 +351,7 @@ class RouteLoaderTest extends TestCase
                             "url" => "foo",
                             "security" => ["role" => "user", "public" => false],
                             "routes" => [
-                                "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo", ["role" => "admin"])
+                                "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo", ["role" => "admin"])
                             ]
                         ]
                     ]
@@ -384,7 +363,7 @@ class RouteLoaderTest extends TestCase
                         "action" => "callFoo"
                     ]
                 ],
-                $this->formatSecurityConfig("one", ["role" => "user", "public" => false], ["role" => "admin"]),
+                self::formatSecurityConfig("one", ["role" => "user", "public" => false], ["role" => "admin"]),
                 ["foo"]
             ],
             "nested groups" => [
@@ -396,14 +375,14 @@ class RouteLoaderTest extends TestCase
                                 "bar" => [
                                     "url" => "bar",
                                     "routes" => [
-                                        "one" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                        "one" => self::formatRouteConfig("get", "bar", "mock", "callBar")
                                     ]
                                 ],
                                 "baz" => [
                                     "url" => "baz",
                                     "routes" => [
-                                        "two" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
-                                        "three" => $this->formatRouteConfig("post", "baz", "mock", "callBaz")
+                                        "two" => self::formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                        "three" => self::formatRouteConfig("post", "baz", "mock", "callBaz")
                                     ]
                                 ]
                             ]
@@ -428,16 +407,16 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("one"),
-                    $this->formatSecurityConfig("two"),
-                    $this->formatSecurityConfig("three")
+                    self::formatSecurityConfig("one"),
+                    self::formatSecurityConfig("two"),
+                    self::formatSecurityConfig("three")
                 ),
                 ["foo", "bar", "baz"]
             ],
             "adding routes" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
                     ]
                 ],
                 [
@@ -453,20 +432,20 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("one"),
-                    $this->formatSecurityConfig("two")
+                    self::formatSecurityConfig("one"),
+                    self::formatSecurityConfig("two")
                 ),
                 [],
                 [
                     "routes" => [
-                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                        "two" => self::formatRouteConfig("post", "bar", "mock", "callBar")
                     ]
                 ]
             ],
             "don't overwrite routes" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
                     ]
                 ],
                 [
@@ -477,12 +456,12 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("one")
+                    self::formatSecurityConfig("one")
                 ),
                 [],
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                        "one" => self::formatRouteConfig("post", "bar", "mock", "callBar")
                     ]
                 ]
             ],
@@ -492,7 +471,7 @@ class RouteLoaderTest extends TestCase
                         "one" => [
                             "url" => "one",
                             "routes" =>[
-                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                                "two" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
                             ]
                         ]
                     ]
@@ -510,8 +489,8 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("two"),
-                    $this->formatSecurityConfig("four")
+                    self::formatSecurityConfig("two"),
+                    self::formatSecurityConfig("four")
                 ),
                 ["one", "three"],
                 [
@@ -519,7 +498,7 @@ class RouteLoaderTest extends TestCase
                         "three" => [
                             "url" => "three",
                             "routes" =>[
-                                "four" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                                "four" => self::formatRouteConfig("get", "bar", "mock", "callBar"),
                             ]
                         ]
                     ]
@@ -531,7 +510,7 @@ class RouteLoaderTest extends TestCase
                         "one" => [
                             "url" => "one",
                             "routes" =>[
-                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                                "two" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
                             ]
                         ]
                     ]
@@ -549,8 +528,8 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("two"),
-                    $this->formatSecurityConfig("three")
+                    self::formatSecurityConfig("two"),
+                    self::formatSecurityConfig("three")
                 ),
                 ["one"],
                 [
@@ -558,7 +537,7 @@ class RouteLoaderTest extends TestCase
                         "one" => [
                             "url" => "one",
                             "routes" =>[
-                                "three" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                                "three" => self::formatRouteConfig("get", "bar", "mock", "callBar"),
                             ]
                         ]
                     ]
@@ -571,7 +550,7 @@ class RouteLoaderTest extends TestCase
                             "url" => "foo",
                             "security" => ["public" => false],
                             "routes" =>[
-                                "two" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                                "two" => self::formatRouteConfig("get", "bar", "mock", "callBar"),
                             ]
                         ]
                     ]
@@ -589,8 +568,8 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("two", ["public" => false]),
-                    $this->formatSecurityConfig("three", ["public" => false])
+                    self::formatSecurityConfig("two", ["public" => false]),
+                    self::formatSecurityConfig("three", ["public" => false])
                 ),
                 ["foo"],
                 [
@@ -599,7 +578,7 @@ class RouteLoaderTest extends TestCase
                             "url" => "fiz",
                             "security" => ["public" => true],
                             "routes" =>[
-                                "three" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                "three" => self::formatRouteConfig("get", "baz", "mock", "callBaz"),
                             ]
                         ]
                     ]
@@ -611,7 +590,7 @@ class RouteLoaderTest extends TestCase
                         "one" => [
                             "url" => "one",
                             "routes" =>[
-                                "two" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
+                                "two" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
                             ]
                         ]
                     ]
@@ -624,7 +603,7 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("two")
+                    self::formatSecurityConfig("two")
                 ),
                 ["one"],
                 [
@@ -632,7 +611,7 @@ class RouteLoaderTest extends TestCase
                         "one" => [
                             "url" => "one",
                             "routes" =>[
-                                "two" => $this->formatRouteConfig("get", "bar", "mock", "callBar"),
+                                "two" => self::formatRouteConfig("get", "bar", "mock", "callBar"),
                             ]
                         ]
                     ]
@@ -641,9 +620,9 @@ class RouteLoaderTest extends TestCase
             "everything together" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "callFoo"),
-                        "two" => $this->formatRouteConfig("post", "foo", "mock", "callFoo"),
-                        "three" => $this->formatRouteConfig("put", "foo", "mock", "callFoo")
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "callFoo"),
+                        "two" => self::formatRouteConfig("post", "foo", "mock", "callFoo"),
+                        "three" => self::formatRouteConfig("put", "foo", "mock", "callFoo")
                     ],
                     "groups" => [
                         "foo" => [
@@ -654,15 +633,15 @@ class RouteLoaderTest extends TestCase
                                     "url" => "bar",
                                     "security" => ["role" => "user"],
                                     "routes" => [
-                                        "five" => $this->formatRouteConfig("get", "bar", "mock", "callBar")
+                                        "five" => self::formatRouteConfig("get", "bar", "mock", "callBar")
                                     ]
                                 ],
                                 "baz" => [
                                     "url" => "baz",
                                     "security" => ["role" => "admin"],
                                     "routes" => [
-                                        "seven" => $this->formatRouteConfig("get", "baz", "mock", "callBaz"),
-                                        "eight" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "super admin"])
+                                        "seven" => self::formatRouteConfig("get", "baz", "mock", "callBaz"),
+                                        "eight" => self::formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "super admin"])
                                     ]
                                 ]
                             ]
@@ -717,21 +696,21 @@ class RouteLoaderTest extends TestCase
                     ]
                 ],
                 array_merge(
-                    $this->formatSecurityConfig("one"),
-                    $this->formatSecurityConfig("two"),
-                    $this->formatSecurityConfig("three"),
-                    $this->formatSecurityConfig("four"),
-                    $this->formatSecurityConfig("five", ["public" => false], ["role" => "user"]),
-                    $this->formatSecurityConfig("six", ["public" => false], ["role" => "user"]),
-                    $this->formatSecurityConfig("seven", ["public" => false], ["role" => "admin"]),
-                    $this->formatSecurityConfig("eight", ["public" => false], ["role" => "super admin"]),
-                    $this->formatSecurityConfig("nine", ["public" => false], ["role" => "editor"])
+                    self::formatSecurityConfig("one"),
+                    self::formatSecurityConfig("two"),
+                    self::formatSecurityConfig("three"),
+                    self::formatSecurityConfig("four"),
+                    self::formatSecurityConfig("five", ["public" => false], ["role" => "user"]),
+                    self::formatSecurityConfig("six", ["public" => false], ["role" => "user"]),
+                    self::formatSecurityConfig("seven", ["public" => false], ["role" => "admin"]),
+                    self::formatSecurityConfig("eight", ["public" => false], ["role" => "super admin"]),
+                    self::formatSecurityConfig("nine", ["public" => false], ["role" => "editor"])
                 ),
                 ["foo", "bar", "baz", "fiz"],
                 [
                     "routes" => [
-                        "two" => $this->formatRouteConfig("post", "bar", "mock", "callBar"),
-                        "four" => $this->formatRouteConfig("patch", "bar", "mock", "callBar")
+                        "two" => self::formatRouteConfig("post", "bar", "mock", "callBar"),
+                        "four" => self::formatRouteConfig("patch", "bar", "mock", "callBar")
                     ],
                     "groups" => [
                         "foo" => [
@@ -741,20 +720,20 @@ class RouteLoaderTest extends TestCase
                                 "bar" => [
                                     "url" => "bar",
                                     "routes" => [
-                                        "six" => $this->formatRouteConfig("post", "bar", "mock", "callBar")
+                                        "six" => self::formatRouteConfig("post", "bar", "mock", "callBar")
                                     ]
                                 ],
                                 "baz" => [
                                     "url" => "foo",
                                     "routes" => [
-                                        "eight" => $this->formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "user"])
+                                        "eight" => self::formatRouteConfig("post", "baz", "mock", "callBaz", ["role" => "user"])
                                     ]
                                 ],
                                 "fiz" => [
                                     "url" => "fiz",
                                     "security" => ["role" => "editor"],
                                     "routes" => [
-                                        "nine" => $this->formatRouteConfig("delete", "foo", "mock", "callFoo")
+                                        "nine" => self::formatRouteConfig("delete", "foo", "mock", "callFoo")
                                     ]
                                 ]
                             ]
@@ -765,13 +744,13 @@ class RouteLoaderTest extends TestCase
         ];
     }
 
-    public function invalidRoutesProvider(): array
+    public static function invalidRoutesProvider(): array
     {
         return [
             "no url" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "", "mock", "callFoo")
+                        "one" => self::formatRouteConfig("get", "", "mock", "callFoo")
                     ]
                 ],
                 "/does not contain a URL/"
@@ -779,7 +758,7 @@ class RouteLoaderTest extends TestCase
             "invalid method" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("put", "foo", "mock", "callFoo")
+                        "one" => self::formatRouteConfig("put", "foo", "mock", "callFoo")
                     ]
                 ],
                 "/method.*is not allowed/",
@@ -799,7 +778,7 @@ class RouteLoaderTest extends TestCase
             "no controller in action" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "", "callFoo")
+                        "one" => self::formatRouteConfig("get", "foo", "", "callFoo")
                     ]
                 ],
                 "/does not contain.*controller name/"
@@ -807,7 +786,7 @@ class RouteLoaderTest extends TestCase
             "no method in action" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "")
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "")
                     ]
                 ],
                 "/does not contain.*controller.*method/"
@@ -815,7 +794,7 @@ class RouteLoaderTest extends TestCase
             "controller not registered" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "blah", "callFoo")
+                        "one" => self::formatRouteConfig("get", "foo", "blah", "callFoo")
                     ]
                 ],
                 "/controller.*not registered/"
@@ -823,7 +802,7 @@ class RouteLoaderTest extends TestCase
             "controller method doesn't exist" => [
                 [
                     "routes" => [
-                        "one" => $this->formatRouteConfig("get", "foo", "mock", "missing")
+                        "one" => self::formatRouteConfig("get", "foo", "mock", "missing")
                     ]
                 ],
                 "/method.*does not exist on controller/"
@@ -839,7 +818,7 @@ class RouteLoaderTest extends TestCase
         ];
     }
 
-    public function routeClosureProvider(): array
+    public static function routeClosureProvider(): array
     {
         return [
             "no args" => [
@@ -875,7 +854,7 @@ class RouteLoaderTest extends TestCase
         ];
     }
 
-    protected function formatRouteConfig(string $method, string $url, string $controller, string $action, array $security = [], ?bool $public = null): array
+    protected static function formatRouteConfig(string $method, string $url, string $controller, string $action, array $security = [], ?bool $public = null): array
     {
         $config = [
             "method" => $method,
@@ -894,7 +873,7 @@ class RouteLoaderTest extends TestCase
         return $config;
     }
 
-    protected function formatSecurityConfig(string $name, array ...$configs): array
+    protected static function formatSecurityConfig(string $name, array ...$configs): array
     {
         return [$name => array_replace(["public" => true], ...$configs)];
     }
