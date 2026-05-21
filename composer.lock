@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "905b8ae516d783fffaef760447fcfac0",
+    "content-hash": "762b10728d1d0e7e6ec4c1446eb3f9e7",
     "packages": [
         {
             "name": "guzzlehttp/psr7",
@@ -221,16 +221,16 @@
         },
         {
             "name": "lexide/syringe",
-            "version": "dev-php8.2",
+            "version": "2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lexide/syringe.git",
-                "reference": "cb6aab029092375aef8b0aca6094117c0a74335d"
+                "reference": "714716f676f52f735235d69a3fc04f40b421e3c7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lexide/syringe/zipball/cb6aab029092375aef8b0aca6094117c0a74335d",
-                "reference": "cb6aab029092375aef8b0aca6094117c0a74335d",
+                "url": "https://api.github.com/repos/lexide/syringe/zipball/714716f676f52f735235d69a3fc04f40b421e3c7",
+                "reference": "714716f676f52f735235d69a3fc04f40b421e3c7",
                 "shasum": ""
             },
             "require": {
@@ -266,9 +266,9 @@
             "homepage": "https://github.com/lexide/syringe",
             "support": {
                 "issues": "https://github.com/lexide/syringe/issues",
-                "source": "https://github.com/lexide/syringe/tree/php8.2"
+                "source": "https://github.com/lexide/syringe/tree/2.3.0"
             },
-            "time": "2026-05-20T16:59:12+00:00"
+            "time": "2026-05-21T09:25:59+00:00"
         },
         {
             "name": "nikic/fast-route",
@@ -3533,18 +3533,9 @@
             "time": "2025-11-17T20:03:58+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "lexide/syringe",
-            "version": "dev-php8.2",
-            "alias": "2.3.0",
-            "alias_normalized": "2.3.0.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "lexide/syringe": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
