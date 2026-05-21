@@ -4,19 +4,13 @@ namespace Lexide\LazyBoy\Test\Lambda;
 
 use Lexide\LazyBoy\Exception\InputException;
 use Lexide\LazyBoy\Lambda\InputBuilder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class InputBuilderTest extends TestCase
 {
 
-    /**
-     * @dataProvider inputProvider
-     *
-     * @param string $args
-     * @param string $options
-     * @param array $expectedRegex
-     * @throws \Exception
-     */
+    #[DataProvider("inputProvider")]
     public function testBuildingInput(string $args = "", string $options = "", array $expectedRegex = [])
     {
         $command = "test:command";
@@ -52,14 +46,7 @@ class InputBuilderTest extends TestCase
         $inputBuilder->buildInput("", "", "", []);
     }
 
-    /**
-     * @dataProvider invalidInputProvider
-     *
-     * @param string $args
-     * @param string $options
-     * @param string $exceptionMessageRegex
-     * @throws InputException
-     */
+    #[DataProvider("invalidInputProvider")]
     public function testInvalidInputData(string $args, string $options, string $exceptionMessageRegex)
     {
         $this->expectException(InputException::class);
@@ -78,7 +65,7 @@ class InputBuilderTest extends TestCase
         $inputBuilder->buildInput($command, $args, $options, $event);
     }
 
-    public function inputProvider(): array
+    public static function inputProvider(): array
     {
         return [
             "Command only" => [],
@@ -164,7 +151,7 @@ class InputBuilderTest extends TestCase
         ];
     }
 
-    public function invalidInputProvider(): array
+    public static function invalidInputProvider(): array
     {
         return [
             "Bad arg json" => [
