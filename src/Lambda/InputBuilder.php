@@ -40,7 +40,11 @@ class InputBuilder
     {
         $kv = [];
         if (!empty($string)) {
-            $kv = json_decode($string, true, JSON_THROW_ON_ERROR);
+            try {
+                $kv = json_decode($string, true, flags: JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                throw new InputException("Value was not in JSON format", previous: $e);
+            }
             if (!is_array($kv)) {
                 throw new InputException(ucfirst($type) . "s was not an array");
             }
