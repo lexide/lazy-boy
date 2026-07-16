@@ -21,7 +21,7 @@ class JsonDecoder implements DecoderInterface
     public function decode(ServerRequestInterface $request): mixed
     {
         try {
-            return json_decode($request->getBody()->getContents(), true, JSON_THROW_ON_ERROR);
+            return json_decode($request->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new DecodeException("JSON decoding failed", previous: $e);
         }
